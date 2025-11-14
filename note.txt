@@ -1,0 +1,48 @@
+Ce qu'on doit faire :
+	une application web complète,
+	avec authentification via 42,
+	une interface moderne (React, Next.js…),
+	une base de données PostgreSQL,
+	et une partie temps réel (WebSocket) pour un chat, un jeu Pong
+
+Il y a donc 3 "mondes" a assembler : front-end, back-end, temps reels
+
+1. Installer l'environnement
+	_ Node.js
+	_ PostgreSQL
+
+2. Back-end
+	_ NestJS ou Express + TypeScript
+	_ Demarrer un serveur
+	_ Definir quelques routes simples
+	_ Connecter la base de donnes
+	_ Ajouter Prisma pour utiliser PostgreSQL
+	_ Model User minimal (login, username)
+	_ Verifier que ca ecrit et lit dans la base
+
+3. Authentification 42
+	_ Installer le OAuth une fois que le back-end tourne, pas avant
+	_ "creer un app" sur intranet
+	_ Recupere client_id et client_secret
+	_ Faire 2 routes : GET /auth/42 et GET /auth/42/callback
+		redirection vers le site de 42 et recuperer le code et l'echanger contre un token
+		permet de savoir qui est connecte
+
+4. Front-end
+	_ Next.js avec TypeScript est plus simple pour nous debutant
+	_ Faire une premiere page avec un boutton "login", apres login afficher qqch
+	_ Utiliser .tsx  pour faire un composant simple et appeler le back-end avec fetch
+
+	Le front-end doit pouvoir afficher l'utilisateur connecte et appeler le back-end
+
+5. Temps reel
+	_ Ajouter Socket.io au back-end d'abord puis au front-end
+	_ Chaque fois qu'un utilisateur se connecte, afficher un message dans un log du navigateur
+	_ Une fois le premier message en temps reel apparu le reste devient facile parait-il !
+
+6. Assemble the army
+	_ Quand tout fonctionne, on fait briller
+	_ Interface propre
+	_ gestion des amis, blocages, scores
+	_ page de jeu raffinee
+	_ touche esthetique
