@@ -1,10 +1,20 @@
-import { Router } from 'express';
-import { SomeController } from '../controllers/index';
+import { Router } from "express";
+import User from "../models/User";
 
 const router = Router();
-const controller = new SomeController();
 
-router.get('/some-endpoint', controller.someMethod.bind(controller));
-router.post('/another-endpoint', controller.anotherMethod.bind(controller));
+router.post("/", async (req, res) => {
+  try {
+    const user = await User.create(req.body);
+    res.status(201).json(user);
+  } catch (err) {
+    res.status(400).json({ error: "Invalid payload" });
+  }
+});
+
+router.get("/", async (_req, res) => {
+  const users = await User.findAll();
+  res.json(users);
+});
 
 export default router;

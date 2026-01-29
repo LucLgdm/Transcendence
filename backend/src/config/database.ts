@@ -22,4 +22,4 @@ export const connectDatabase = async () => {
   }
 };
 
-export default sequelize; // ← Important!
+export default sequelize;

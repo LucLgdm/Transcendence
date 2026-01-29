@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/28 10:57:36 by lde-merc          #+#    #+#              #
-#    Updated: 2026/01/28 19:05:39 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/01/29 11:05:27 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,7 +23,7 @@ stop:
 
 clean:
 	@echo "Cleaning up Docker images and containers..."
-	@rm src/*/*.js
+	@rm src/*/*.js || true
 	docker compose down --rmi all
 	
 	@echo "Cleanup complete."
@@ -35,3 +35,9 @@ data:
 re: clean all
 
 .PHONY: all stop clean re
+
+# curl -X POST http://localhost:3000/users \
+#  -H "Content-Type: application/json" \
+#  -d '{"username":"testuser","email":"test@test.com","password":"secret"}'
+#
+# curl http://localhost:3000/users
