@@ -540,6 +540,7 @@ function renderBoard(): void {
 }
 
 function getPieceSymbol(piece: Piece): string {
+    console.log(piece ? 1 : 0);
     const symbols: Record<string, string> = {
         'White-pion': '♟',
         'Black-pion': '♙',
@@ -554,7 +555,9 @@ function getPieceSymbol(piece: Piece): string {
         'White-king': '♚',
         'Black-king': '♔',
     }
-    return symbols['${piece.color}-${piece.type}'] || '';
+    const key = `${piece.color}-${piece.type}`;
+    console.log(key, symbols[key]);
+    return symbols[key];
 }
 
 function handleSquareClick(event: Event): void {

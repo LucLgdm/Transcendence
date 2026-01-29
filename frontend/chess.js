@@ -467,6 +467,7 @@ function renderBoard() {
     squares.forEach(squares => { squares.addEventListener('click', handleSquareClick); });
 }
 function getPieceSymbol(piece) {
+    console.log(piece ? 1 : 0);
     const symbols = {
         'White-pion': '♟',
         'Black-pion': '♙',
@@ -481,7 +482,9 @@ function getPieceSymbol(piece) {
         'White-king': '♚',
         'Black-king': '♔',
     };
-    return symbols['${piece.color}-${piece.type}'] || '';
+    const key = `${piece.color}-${piece.type}`;
+    console.log(key, symbols[key]);
+    return symbols[key];
 }
 function handleSquareClick(event) {
     if (!chessGame)
