@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ft_transcendence</title>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <button data-view="profile">Profil</button>
+            <button data-view="friends">Amis</button>
+            <button data-view="chat">Chat</button>
+            <button data-view="games">Jeux</button>
+            <button data-view="leaderboard">Leaderboard</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="view-profile" class="view">
+            <h2>Profil</h2>
+            <div id="profile-info"></div>
+        </section>
+
+        <section id="view-friends" class="view" hidden>
+            <h2>Amis</h2>
+            <ul id="friends-list"></ul>
+            <form id="add-friend-form">
+                <input type="text" id="friend-name" placeholder="Nom d'ami" required>
+                <button type="submit">Ajouter</button>
+            </form>
+        </section>
+
+        <section id="view-chat" class="view" hidden>
+            <h2>Chat</h2>
+            <div id="chat-messages"></div>
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Écrire un message..." required>
+                <button type="submit">Envoyer</button>
+            </form>
+        </section>
+
+        <section id="view-games" class="view" hidden>
+            <h2>Jeux</h2>
+
+            <div id="pong-container">
+                <h3>Pong</h3>
+                <canvas id="pong-canvas" width="600" height="400"></canvas>
+            </div>
+
+            <div id="chess-container">
+                <h3>Chess</h3>
+                <div id="chess-board"></div>
+            </div>
+        </section>
+
+        <section id="view-leaderboard" class="view" hidden>
+            <h2>Leaderboard</h2>
+            <table id="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Joueur</th>
+                        <th>Score</th>
+                        <th>Jeux</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <link rel="stylesheet" href="index.css">
+    <script src="index.js" type="module"></script>
+</body>
+</html>

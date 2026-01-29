@@ -1,0 +1,12 @@
+{
+  "name": "ft_transcendance-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for ft_transcendance",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

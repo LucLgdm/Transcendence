@@ -35,7 +35,7 @@ implements UserAttributes
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
 }
-
+``
 /**
  * Définition du modèle Sequelize
  */
