@@ -180,19 +180,19 @@ export class ChessGame {
                 moves.push(...this.getPionMoves(position, piece.color));
                 break;
             case 'rook':
-                moves.push(...this.getPionMoves(position, piece.color));
+                moves.push(...this.getRookMoves(position, piece.color));
                 break;
             case 'bishop':
-                moves.push(...this.getPionMoves(position, piece.color));
+                moves.push(...this.getBishopMoves(position, piece.color));
                 break;
             case 'knight':
-                moves.push(...this.getPionMoves(position, piece.color));
+                moves.push(...this.getKnightMoves(position, piece.color));
                 break;
             case 'queen':
-                moves.push(...this.getPionMoves(position, piece.color));
+                moves.push(...this.getQueenMoves(position, piece.color));
                 break;
             case 'king':
-                moves.push(...this.getPionMoves(position, piece.color));
+                moves.push(...this.getKingMoves(position, piece.color));
                 break;
         }
         return moves;
@@ -410,8 +410,9 @@ function renderBoard() {
     const chessB = document.getElementById('chess-board');
     if (!chessB || !chessGame)
         return;
+    chessB.innerHTML = '';
     const board = chessGame.getBoard();
-    const selectedPosition = ChessGame.selectPiece;
+    const selectedPosition = chessGame.getSelectedPiece();
     const possibleMoves = chessGame.getPossibleMoves();
     const currentPlayer = chessGame.getcurrentPlayer();
     const gameStatus = chessGame.getGameStatus();
@@ -493,7 +494,7 @@ function handleSquareClick(event) {
     const row = parseInt(t.dataset.row || '0');
     const colon = parseInt(t.dataset.colon || '0');
     const position = { row, colon };
-    const selectedPosition = chessGame.selectPiece;
+    const selectedPosition = chessGame.getSelectedPiece();
     if (selectedPosition && selectedPosition.row === row && selectedPosition.colon === colon) {
         chessGame.selectPiece({ row: -1, colon: -1 });
         renderBoard();
