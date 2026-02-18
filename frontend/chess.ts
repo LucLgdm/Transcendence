@@ -100,7 +100,7 @@ export class ChessGame implements IChessGame {
         } else {
             otherColor = 'White';
         }
-
+        
         for (let row = 0; row < 8; row++) {
             for (let colon = 0; colon < 8; colon++) {
                 const piece = board[row][colon];
@@ -244,11 +244,11 @@ export class ChessGame implements IChessGame {
         let direction: number;
         let startRow: number;
         if (color === 'White') {
-            direction = 1;
-            startRow = 1;
-        } else {
             direction = -1;
             startRow = 6;
+        } else {
+            direction = 1;
+            startRow = 1;
         }
 
         if (this.isvalidPosition(position.row + direction, position.colon) &&
@@ -263,7 +263,7 @@ export class ChessGame implements IChessGame {
             const newcol = position.colon + cap;
             if (this.isvalidPosition(position.row + direction, newcol)) {
                 const target = this.board[position.row + direction][newcol];
-                if (!target || target.color !== color) {
+                if (target && color !== target.color) {
                     moves.push({row: position.row + direction, colon: newcol});
                 }
             }
@@ -285,10 +285,12 @@ export class ChessGame implements IChessGame {
                 if (!target) {
                     moves.push({row: newrow, colon: newcol});
                 }
-                else if (target.color !== color) {
-                    moves.push({row: newrow, colon: newcol});
+                else {
+                    if (target.color !== color) {
+                        moves.push({row: newrow, colon: newcol});
+                    }
+                    break;
                 }
-                break;
             }
         }
         return moves;
@@ -325,6 +327,12 @@ export class ChessGame implements IChessGame {
                 const target = this.board[newrow][newcol];
                 if (!target) {
                     moves.push({row: newrow, colon: newcol});
+                }
+                else {
+                    if (target.color !== color) {
+                        moves.push({row: newrow, colon: newcol});
+                    }
+                    break;
                 }
             }
         }
@@ -395,7 +403,7 @@ export class ChessGame implements IChessGame {
             const newcol = position.colon + cap;
             if (this.isvalidPosition(position.row + direction, newcol)) {
                 const t = this.board[position.row + direction][newcol];
-                if (!t || t.color !== color) {
+                if (t && t.color !== color) {
                     moves.push({row: position.row + direction, colon: newcol});
                 }
             }

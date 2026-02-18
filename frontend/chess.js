@@ -205,12 +205,12 @@ export class ChessGame {
         let direction;
         let startRow;
         if (color === 'White') {
-            direction = 1;
-            startRow = 1;
-        }
-        else {
             direction = -1;
             startRow = 6;
+        }
+        else {
+            direction = 1;
+            startRow = 1;
         }
         if (this.isvalidPosition(position.row + direction, position.colon) &&
             !this.board[position.row + direction][position.colon]) {
@@ -223,7 +223,7 @@ export class ChessGame {
             const newcol = position.colon + cap;
             if (this.isvalidPosition(position.row + direction, newcol)) {
                 const target = this.board[position.row + direction][newcol];
-                if (!target || target.color !== color) {
+                if (target && color !== target.color) {
                     moves.push({ row: position.row + direction, colon: newcol });
                 }
             }
@@ -243,10 +243,12 @@ export class ChessGame {
                 if (!target) {
                     moves.push({ row: newrow, colon: newcol });
                 }
-                else if (target.color !== color) {
-                    moves.push({ row: newrow, colon: newcol });
+                else {
+                    if (target.color !== color) {
+                        moves.push({ row: newrow, colon: newcol });
+                    }
+                    break;
                 }
-                break;
             }
         }
         return moves;
@@ -278,6 +280,12 @@ export class ChessGame {
                 const target = this.board[newrow][newcol];
                 if (!target) {
                     moves.push({ row: newrow, colon: newcol });
+                }
+                else {
+                    if (target.color !== color) {
+                        moves.push({ row: newrow, colon: newcol });
+                    }
+                    break;
                 }
             }
         }
@@ -340,7 +348,7 @@ export class ChessGame {
             const newcol = position.colon + cap;
             if (this.isvalidPosition(position.row + direction, newcol)) {
                 const t = this.board[position.row + direction][newcol];
-                if (!t || t.color !== color) {
+                if (t && t.color !== color) {
                     moves.push({ row: position.row + direction, colon: newcol });
                 }
             }
