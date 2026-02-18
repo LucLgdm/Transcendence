@@ -3,15 +3,16 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
+#    By: ade-rese <ade-rese@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/28 10:57:36 by lde-merc          #+#    #+#              #
-#    Updated: 2026/01/29 11:05:27 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/18 15:06:13 by ade-rese         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 all:
 	@echo "Building Docker image..."
+	./script/generate_cert.sh
 	docker compose build
 
 	@echo "Starting services..."

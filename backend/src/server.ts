@@ -14,7 +14,7 @@ async function bootstrap() {
 	await User.sync();
 	console.log("✅ User table synced");
 	app.listen(PORT, () => {
-		console.log(`Server is running on http://localhost:${PORT}`);
+		console.log(`Server is running on https://app:${PORT}`);
 	});
 }
 
