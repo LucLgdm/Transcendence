@@ -498,7 +498,7 @@ function renderBoard(): void {
 
     let html = `
         <div style="margin-bottom: 10px;">
-            <strong>Tour: ${currentPlayer === 'White' ? 'Blanc' : 'Noir'}</strong>
+            <strong>Tour: ${currentPlayer === 'White' ? 'Noir' : 'Blanc'}</strong>
             <span style="margin-left: 20px;">${gameStatus}</span>
         </div>
         <div style="display: inline-block; border: 2px solid #333;">
