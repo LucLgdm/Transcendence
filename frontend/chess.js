@@ -212,12 +212,17 @@ export class ChessGame {
             direction = 1;
             startRow = 1;
         }
-        if (this.isvalidPosition(position.row + direction, position.colon) &&
-            !this.board[position.row + direction][position.colon]) {
-            moves.push({ row: position.row + direction, colon: position.colon });
+        const oneStep = position.row + direction;
+        const twoStep = position.row + 2 * direction;
+        if (this.isvalidPosition(oneStep, position.colon) &&
+            !this.board[oneStep][position.colon]) {
+            moves.push({ row: oneStep, colon: position.colon });
         }
-        if (position.row === startRow && this.isvalidPosition(position.row + 2 * direction, position.colon)) {
-            moves.push({ row: position.row + 2 * direction, colon: position.colon });
+        if (position.row === startRow &&
+            this.isvalidPosition(twoStep, position.colon) &&
+            !this.board[oneStep][position.colon] &&
+            !this.board[twoStep][position.colon]) {
+            moves.push({ row: twoStep, colon: position.colon });
         }
         for (const cap of [-1, 1]) {
             const newcol = position.colon + cap;
