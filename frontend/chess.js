@@ -2,7 +2,7 @@ export class ChessGame {
     constructor() {
         this.board = this.initializeBoard();
         // faire en sorte que ca soit alleatoire
-        this.currentPlayer = 'White';
+        this.currentPlayer = 'Black';
         this.selectedPiece = null;
         this.possibleMoves = [];
         this.gameStatus = 'inProgress';
@@ -165,7 +165,7 @@ export class ChessGame {
     resetGame() {
         this.board = this.initializeBoard();
         // faire en sorte qu'il soit l'autre couleur
-        this.currentPlayer = 'White';
+        this.currentPlayer = 'Black';
         this.selectedPiece = null;
         this.possibleMoves = [];
         this.gameStatus = 'inProgress';
@@ -195,12 +195,7 @@ export class ChessGame {
                 moves.push(...this.getKingMoves(position, piece.color));
                 break;
         }
-        return moves.filter(move => {
-            const clone = this.cloneBoard();
-            clone[position.row][position.colon] = null;
-            clone[move.row][move.colon] = piece ? { ...piece } : null;
-            return !this.wouldBeinchecked(clone, this.currentPlayer);
-        });
+        return moves;
     }
     isvalidPosition(row, colon) {
         return row >= 0 && row < 8 && colon >= 0 && colon < 8;
@@ -323,29 +318,29 @@ export class ChessGame {
         const moves = [];
         switch (piece.type) {
             case 'pion':
-                moves.push(...this.getPionMovesBoard(position, piece.color, board));
+                moves.push(...this.getPionMovesBoard(position, piece.color));
                 break;
             case 'rook':
-                moves.push(...this.getRookMovesBoard(position, piece.color, board));
+                moves.push(...this.getRookMovesBoard(position, piece.color));
                 break;
             case 'bishop':
-                moves.push(...this.getBishopMovesBoard(position, piece.color, board));
+                moves.push(...this.getBishopMovesBoard(position, piece.color));
                 break;
             case 'knight':
-                moves.push(...this.getKnightMovesBoard(position, piece.color, board));
+                moves.push(...this.getKnightMovesBoard(position, piece.color));
                 break;
             case 'queen':
-                moves.push(...this.getQueenMovesBoard(position, piece.color, board));
+                moves.push(...this.getQueenMovesBoard(position, piece.color));
                 break;
             case 'king':
-                moves.push(...this.getKingMovesBoard(position, piece.color, board));
+                moves.push(...this.getKingMovesBoard(position, piece.color));
                 break;
             default:
                 break;
         }
         return moves;
     }
-    getPionMovesBoard(position, color, board) {
+    getPionMovesBoard(position, color) {
         const moves = [];
         let direction;
         if (color === 'White') {
@@ -357,7 +352,7 @@ export class ChessGame {
         for (const cap of [-1, 1]) {
             const newcol = position.colon + cap;
             if (this.isvalidPosition(position.row + direction, newcol)) {
-                const t = board[position.row + direction][newcol];
+                const t = this.board[position.row + direction][newcol];
                 if (t && t.color !== color) {
                     moves.push({ row: position.row + direction, colon: newcol });
                 }
@@ -365,7 +360,7 @@ export class ChessGame {
         }
         return moves;
     }
-    getRookMovesBoard(position, color, board) {
+    getRookMovesBoard(position, color) {
         const moves = [];
         const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
         for (const [rowDir, colDir] of directions) {
@@ -374,7 +369,7 @@ export class ChessGame {
                 const newcol = position.colon + i * colDir;
                 if (!this.isvalidPosition(newrow, newcol))
                     break;
-                const t = board[newrow][newcol];
+                const t = this.board[newrow][newcol];
                 if (!t) {
                     moves.push({ row: newrow, colon: newcol });
                 }
@@ -388,22 +383,10 @@ export class ChessGame {
         }
         return moves;
     }
-    getKnightMovesBoard(position, color, board) {
-        const moves = [];
-        const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
-        for (const [rowDir, colDir] of knightMoves) {
-            const newrow = position.row + rowDir;
-            const newcol = position.colon + colDir;
-            if (this.isvalidPosition(newrow, newcol)) {
-                const target = board[newrow][newcol];
-                if (!target || target.color !== color) {
-                    moves.push({ row: newrow, colon: newcol });
-                }
-            }
-        }
-        return moves;
+    getKnightMovesBoard(position, color) {
+        return this.getKnightMoves(position, color);
     }
-    getBishopMovesBoard(position, color, board) {
+    getBishopMovesBoard(position, color) {
         const moves = [];
         const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
         for (const [rowdir, coldir] of directions) {
@@ -412,7 +395,7 @@ export class ChessGame {
                 const newcol = position.colon + i * coldir;
                 if (!this.isvalidPosition(newrow, newcol))
                     break;
-                const t = board[newrow][newcol];
+                const t = this.board[newrow][newcol];
                 if (!t) {
                     moves.push({ row: newrow, colon: newcol });
                 }
@@ -426,23 +409,11 @@ export class ChessGame {
         }
         return moves;
     }
-    getQueenMovesBoard(position, color, board) {
-        return [...this.getRookMovesBoard(position, color, board), ...this.getBishopMovesBoard(position, color, board)];
+    getQueenMovesBoard(position, color) {
+        return [...this.getRookMovesBoard(position, color), ...this.getBishopMovesBoard(position, color)];
     }
-    getKingMovesBoard(position, color, board) {
-        const moves = [];
-        const KingMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-        for (const [rowDir, colDir] of KingMoves) {
-            const newrow = position.row + rowDir;
-            const newcol = position.colon + colDir;
-            if (this.isvalidPosition(newrow, newcol)) {
-                const target = board[newrow][newcol];
-                if (!target || target.color !== color) {
-                    moves.push({ row: newrow, colon: newcol });
-                }
-            }
-        }
-        return moves;
+    getKingMovesBoard(position, color) {
+        return this.getKingMoves(position, color);
     }
     cloneBoard() {
         return this.board.map(row => row.map(piece => piece ? { ...piece } : null));
@@ -465,7 +436,7 @@ function renderBoard() {
         </div>
         <div style="display: inline-block; border: 2px solid #333;">
     `;
-    for (let row = 0; row < 8; row++) {
+    for (let row = 7; row >= 0; row--) {
         html += '<div style="display: flex;">';
         for (let colon = 0; colon < 8; colon++) {
             const piece = board[row][colon];
