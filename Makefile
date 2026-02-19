@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/05 17:37:46 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/19 09:11:22 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/19 09:51:58 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,6 +22,9 @@ all:
 			tsc && \
 			serve . \
 		"
+	
+	@make -C backend
+	@make -C frontend
 
 clean:
 	@echo "Cleaning compiled files..."

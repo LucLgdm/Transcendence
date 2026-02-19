@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/28 10:57:36 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/19 09:15:05 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/19 09:42:57 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -36,8 +36,8 @@ re: clean all
 
 .PHONY: all stop clean re
 
-# curl -X POST http://localhost:3000/users \
-#  -H "Content-Type: application/json" \
+# curl -X POST http://localhost:3000/users 
+#  -H "Content-Type: application/json" 
 #  -d '{"username":"testuser","email":"test@test.com","password":"secret"}'
 #
 # curl http://localhost:3000/users
