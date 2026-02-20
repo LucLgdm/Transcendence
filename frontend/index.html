@@ -14,6 +14,7 @@
             <button data-view="chat">Chat</button>
             <button data-view="games">Jeux</button>
             <button data-view="leaderboard">Leaderboard</button>
+			<button data-view="Login">Login</button>
         </nav>
     </header>
 
@@ -68,6 +69,35 @@
                 <tbody></tbody>
             </table>
         </section>
+
+		<section id="view-Login" class="view" hidden>
+			<h2>Login</h2>
+			<form id="loginForm">
+				<!-- champs login -->
+				<div>
+					<label for="username">Identifiant :</label><br>
+					<input type="text" id="username" name="username" required>
+				</div>
+
+				<br>
+				<div>
+					<label for="password">Mot de passe :</label><br>
+					<input type="password" id="password" name="password" required>
+				</div>
+
+				<br>
+				<button type="submit">Se connecter</button>
+
+				<button
+					id = "createAccountBtn"
+					type="button"
+					onclick="window.location.href='register.html'">
+					Créer un compte
+				</button>
+			</form>
+
+		<script type="module" src="./login.js"></script>
+		</section> 
     </main>
 
     <link rel="stylesheet" href="index.css">

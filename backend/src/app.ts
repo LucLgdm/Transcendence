@@ -20,7 +20,7 @@ app.use('/api', routes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Backend is running on http://localhost:${PORT}`);
 });
 
 export default app;

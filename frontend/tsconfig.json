@@ -11,6 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node"
   },
-  "include": ["index.ts", "chess.ts", "init-types.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules"]
 }
