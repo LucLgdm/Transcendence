@@ -3,7 +3,7 @@ import { connectDatabase } from './config/database';
 import User from "./models/User";
 import userRoutes from "./routes/index";
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
@@ -12,7 +12,7 @@ async function bootstrap() {
 	await connectDatabase();
 	// Création des tables si elles n'existent pas
 	await User.sync();
-	console.log("✅ User table synced");
+	console.log("User table synced");
 	app.listen(PORT, () => {
 		console.log(`Server is running on http://localhost:${PORT}`);
 	});

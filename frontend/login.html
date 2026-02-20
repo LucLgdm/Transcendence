@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<title>Connexion</title>
+	<link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+	<h1>Connexion</h1>
+
+		<form id="loginForm">
+			<!-- champs login -->
+			<div>
+				<label for="username">Identifiant :</label><br>
+				<input type="text" id="username" name="username" required>
+			</div>
+
+			<br>
+			<div>
+				<label for="password">Mot de passe :</label><br>
+				<input type="password" id="password" name="password" required>
+			</div>
+
+			<br>
+			<button type="submit">Se connecter</button>
+
+			<button
+				id = "createAccountBtn"
+				type="button"
+				onclick="window.location.href='register.html'">
+				Créer un compte
+			</button>
+		</form>
+
+	<script type="module" src="./login.js"></script>
+</body>
+</html>
