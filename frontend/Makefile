@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/05 17:37:46 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/20 12:55:36 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/23 10:51:15 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,7 +27,7 @@ clean:
 	@echo "Cleaning compiled files..."
 	@rm -f *.js
 	@echo "Cleaning up Docker images and containers..."
-	@docker compose down --rmi all
+	@docker compose down -v || true
 
 
 re: clean all
