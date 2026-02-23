@@ -9,8 +9,6 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       NODE_ENV: development
       PORT: 3000
-    volumes:
-      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - db
 
@@ -33,7 +31,7 @@ services:
       - ANOMALY_INBOUND=5
       - ANOMALY_OUTBOUND=4
       - PROXY=1
-      - BACKEND=https://app:3000
+      - BACKEND=http://app:3000
       - SSL_CERT=/etc/nginx/certs/server.crt
       - SSL_KEY=/etc/nginx/certs/server.key
     volumes:
