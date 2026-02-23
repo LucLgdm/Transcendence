@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/28 10:57:36 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/23 10:50:35 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/23 16:43:38 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,7 @@ stop:
 clean:
 	@echo "Cleaning compiled files..."
 	@rm -f src/*.js src/*/*.js
-	docker compose down -v
+	docker compose down --volumes --rmi all
 	
 	@echo "Cleanup complete."
 
