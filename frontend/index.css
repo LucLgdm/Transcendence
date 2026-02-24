@@ -1,0 +1,32 @@
+.chess-color-selection {
+    padding: 20px;
+    text-align: center;
+}
+
+.chess-color-selection__title {
+    margin-bottom: 20px;
+}
+
+.chess-color-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.chess-color-btn {
+    padding: 15px 30px;
+    font-size: 18px;
+    cursor: pointer;
+    border: 2px solid #333;
+    border-radius: 8px;
+}
+
+.chess-color-btn--white {
+    background: #f0d9b5;
+}
+
+.chess-color-btn--black {
+    background: #b58863;
+    color: white;
+}

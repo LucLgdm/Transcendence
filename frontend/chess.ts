@@ -8,11 +8,12 @@ export class ChessGame implements IChessGame {
     private selectedPiece: Position | null;
     private possibleMoves: Position[];
     private gameStatus: string;
-
-    constructor() {
+	private playerColor: Color;
+	
+    constructor(startingColor: Color) {
         this.board = this.initializeBoard();
-        // faire en sorte que ca soit alleatoire
-        this.currentPlayer = 'Black';
+		this.playerColor = startingColor;
+		this.currentPlayer = startingColor;
         this.selectedPiece = null;
         this.possibleMoves = [];
         this.gameStatus = 'inProgress';
@@ -198,8 +199,7 @@ export class ChessGame implements IChessGame {
 
     resetGame(): void {
         this.board = this.initializeBoard();
-        // faire en sorte qu'il soit l'autre couleur
-        this.currentPlayer = 'Black';
+		this.currentPlayer = this.playerColor;
         this.selectedPiece = null;
         this.possibleMoves = [];
         this.gameStatus = 'inProgress';
@@ -602,12 +602,48 @@ function handleSquareClick(event: Event): void {
 
 }
 
+
+function ColorSelected(): void {
+	const chessB = document.getElementById('chess-board');
+	if (!chessB)
+		return;
+	chessB.innerHTML = '';
+	
+	const container = document.createElement('div');
+	container.className = 'chess-color-selection';
+	
+	const title = document.createElement('h2');
+	title.className = 'chess-color-seletion_title';
+	title.textContent = 'choisissew la couleur ! :)';
+	
+	const buttonWrapper = document.createElement('div');
+	buttonWrapper.className = 'chess-color-buttons';
+	
+	const whiteButton = document.createElement('button');
+	whiteButton.className = 'chess-color-btn chess-color-btn--white';
+	whiteButton.textContent = 'Blanc';
+	whiteButton.addEventListener('click', () => startGame('White'));
+	
+	const blackButton = document.createElement('button');
+	whiteButton.className = 'chess-color-btn chess-color-btn--black';
+	whiteButton.textContent = 'Noir';
+	whiteButton.addEventListener('click', () => startGame('Black'));
+	
+	buttonWrapper.append(whiteButton, blackButton);
+	container.append(title, buttonWrapper);
+	chessB.appendChild(container);
+}
+
 let chessGame: ChessGame | null = null;
+
+function startGame(color: Color): void {
+	chessGame = new ChessGame(color);
+	renderBoard();
+}
 
 export function initChess(): void {
     const chessB = document.getElementById('chess-board');
     if (!chessB)
         return;
-    chessGame = new ChessGame();
-    renderBoard();
+    ColorSelected();
 }
