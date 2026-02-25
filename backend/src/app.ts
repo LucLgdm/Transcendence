@@ -1,6 +1,7 @@
 import express from 'express';
 import { json } from 'body-parser';
 import { connectDatabase } from './config/database';
+import { loadSecrets } from './config/vault';
 import routes from './routes/index';
 import { errorHandler } from './middleware/index';
 
@@ -11,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(json());
 
 // Database connection
+loadSecrets();
 connectDatabase();
 
 // Routes
