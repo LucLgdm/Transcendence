@@ -6,18 +6,25 @@ const usernameInput = document.getElementById("username") as HTMLInputElement;
 const passwordInput = document.getElementById("password") as HTMLInputElement;
 
 // Attention : Tout ce qui est en dehors de l'evenement s'execute tout de suite
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
 	event.preventDefault();
 
-	const username = usernameInput.value;
-	const password = passwordInput.value;
+	const response = await fetch("http://localhost:3000/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            username: usernameInput.value,
+            password: passwordInput.value
+        })
+    });
 
-	const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
-
-	if (validateLogin(username, password, users)) {
-		console.log("Login successful");
+	if (response.ok) {
+		const data = await response.json();
+		localStorage.setItem("token", data.token);
+		window.location.href = "./index.html";
+		console.log("Login successful:", data);
 	} else {
-		console.log("Invalid username or password");
+		console.log("Login failed");
 	}
 });
 
@@ -35,4 +42,3 @@ function validateLogin(username: string, password: string, users: User[]): boole
 	}
 	return false;
 }
-
