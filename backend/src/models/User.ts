@@ -8,7 +8,9 @@ interface UserAttributes {
 	id: number;
 	username: string;
 	email: string;
-	password: string;
+	password?: string;
+	login_42?: string;
+	profile_picture?: string;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
@@ -30,7 +32,9 @@ implements UserAttributes
 	public id!: number;
 	public username!: string;
 	public email!: string;
-	public password!: string;
+	public password?: string;
+	public login_42?: string;
+	public profile_picture?: string;
 
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
@@ -63,7 +67,18 @@ User.init(
 
 		password: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			allowNull: true,
+		},
+
+		login_42: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			unique: true,
+		},
+
+		profile_picture: {
+			type: DataTypes.STRING,
+			allowNull: true,
 		},
 	},
 	{

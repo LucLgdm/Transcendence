@@ -11,6 +11,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       NODE_ENV: development
       PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      OAUTH_42_UID: ${OAUTH_42_UID}
+      OAUTH_42_SECRET: ${OAUTH_42_SECRET}
+      OAUTH_42_CALLBACK_URL: ${OAUTH_42_CALLBACK_URL}
     depends_on:
       - db
 
