@@ -2,6 +2,7 @@ import { Router } from "express";
 import User from "../models/User";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { auth, AutRequest } from "../middleware";
 
 const router = Router();
 
@@ -51,6 +52,26 @@ router.post("/login", async (req, res) => {
 	} catch (err) {
 		res.status(500).json({ error: "Erreur serveur" });
 	}
+});
+
+router.get("/me", auth, async (req: AutRequest, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: "Non authentifié" });
+        }
+
+        const user = await User.findByPk(req.user.id, {
+            attributes: ["id", "username", "email", "createdAt"],
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: "Utilisateur non trouvé" });
+        }
+
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
 });
 
 export default router;

@@ -14,14 +14,47 @@ function initViewSwitching(): void {
     });
 }
 
-// Initialisation du profil
-function initProfile(): void {
+// fonction asynchrone pour initialiser le profil
+async function initProfile(): Promise<void> {
     const profileInfo = document.getElementById('profile-info');
-    if (profileInfo) {
-        // TODO: Récupérer les données du profil depuis le backend
-        profileInfo.innerHTML = `
-            <p>Chargement du profil...</p>
-        `;
+    if (!profileInfo) 
+        return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
+        return;
+    }
+
+    try {
+        const reponse = await fetch('http://localhost:3000/users/me', {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+    });
+
+    if (!reponse.ok) {
+        profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
+        return;
+    }
+
+    const user = await reponse.json() as {
+        id: number;
+        username: string;
+        email: string;
+        createdAT?: string;
+    }
+
+    profileInfo.innerHTML = `
+        <p>Nom d'utilisateur: ${user.username}</p>
+        <p>Email: ${user.email}</p>
+        <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : 'N/A'}</p>
+    `;
+    } catch (error) {
+        profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
+        console.error('Erreur de récupération du profil:', error);
     }
 }
 
