@@ -1,3 +1,4 @@
+/* chess */
 .chess-color-selection {
     padding: 20px;
     text-align: center;
@@ -29,4 +30,46 @@
 .chess-color-btn--black {
     background: #b58863;
     color: white;
+}
+
+
+
+/* profile */
+.profile_container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    margin-top: 16px;
+}
+
+.profile_l {
+    flex: 0 0 auto;
+}
+
+#profile_avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    background-color: #f0f0f0;
+}
+
+.profile_r {
+    flex: 1;
+}
+
+.profile_info {
+    margin-bottom: 16px;
+}
+
+#friends_list {
+    list-style: none;
+    padding-left: 0;
+    margin: 8px 0 0;
+}
+
+#friends_list li {
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
 }

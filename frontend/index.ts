@@ -14,15 +14,19 @@ function initViewSwitching(): void {
     });
 }
 
-// fonction asynchrone pour initialiser le profil
+// fonction asynchrone pour récupérer les informations du profil
 async function initProfile(): Promise<void> {
     const profileInfo = document.getElementById('profile-info');
+    const avatarImg = document.getElementById('profile-avatar') as HTMLImageElement | null;
     if (!profileInfo) 
         return;
 
     const token = localStorage.getItem('token');
     if (!token) {
         profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
+        if (avatarImg) {
+            avatarImg.src = 'https://via.placeholder.com/150?text=Guest';
+        }
         return;
     }
 
@@ -33,28 +37,34 @@ async function initProfile(): Promise<void> {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-    });
+        });
 
-    if (!reponse.ok) {
-        profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
-        return;
-    }
+        if (!reponse.ok) {
+            profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
+            return;
+        }
 
-    const user = await reponse.json() as {
-        id: number;
-        username: string;
-        email: string;
-        createdAT?: string;
-    }
+        const user = await reponse.json() as {
+            id: number;
+            username: string;
+            email: string;
+            createdAT?: string;
+            avatar?: string;
+        }
 
-    profileInfo.innerHTML = `
-        <p>Nom d'utilisateur: ${user.username}</p>
-        <p>Email: ${user.email}</p>
-        <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : 'N/A'}</p>
-    `;
-    } catch (error) {
-        profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
-        console.error('Erreur de récupération du profil:', error);
+        profileInfo.innerHTML = `
+            <p>Nom d'utilisateur: ${user.username}</p>
+            <p>Email: ${user.email}</p>
+            <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : 'N/A'}</p>
+        `;
+        if (avatarImg) {
+            avatarImg.src = user.avatar && user.avatar.length > 0
+                ? user.avatar
+                : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || 'U')}`;
+        }
+        } catch (error) {
+            profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
+            console.error('Erreur de récupération du profil:', error);
     }
 }
 
@@ -62,7 +72,11 @@ function initFriends(): void {
     const friendsList = document.getElementById('friends-list');
     const addFriendForm = document.getElementById('add-friend-form') as HTMLFormElement;
 
-    const friends: string[] = [];
+    const friends: string[] = JSON.parse(localStorage.getItem('friends') || '[]');
+
+    function saveFriends() {
+        localStorage.setItem('friends', JSON.stringify(friends));
+    }
 
     function renderFriends(): void {
         if (friendsList) {
@@ -78,13 +92,16 @@ function initFriends(): void {
             const input = document.getElementById('friend-name') as HTMLInputElement;
             if (input && input.value.trim()) {
                 friends.push(input.value.trim());
+                saveFriends();
                 renderFriends();
+                initProfileFriends();
                 input.value = '';
             }
         });
     }
 
     renderFriends();
+    initProfileFriends();
 }
 
 function initChat(): void {
@@ -180,6 +197,17 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', main);
 } else {
     main();
+}
+
+function initProfileFriends(): void {
+    const profileFriendsList = document.getElementById('profile-friends-list');
+    if (!profileFriendsList) return;
+
+    const friends: string[] = JSON.parse(localStorage.getItem('friends') || '[]');
+
+    profileFriendsList.innerHTML = friends.length > 0
+        ? friends.map(friend => `<li>${friend}</li>`).join('')
+        : '<li>Aucun ami pour le moment</li>';
 }
 
 import {initChess}  from "./chess.js";
