@@ -191,6 +191,7 @@ function main(): void {
     initChat();
     initGames();
     initLeaderboard();
+    initSidebarToggle();
 }
 
 if (document.readyState === 'loading') {
@@ -208,6 +209,15 @@ function initProfileFriends(): void {
     profileFriendsList.innerHTML = friends.length > 0
         ? friends.map(friend => `<li>${friend}</li>`).join('')
         : '<li>Aucun ami pour le moment</li>';
+}
+
+function initSidebarToggle(): void {
+    const toggle = document.getElementById('nav-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('sidebar-collapsed');
+    });
 }
 
 import {initChess}  from "./chess.js";
