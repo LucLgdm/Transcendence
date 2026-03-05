@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/05 17:37:46 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/23 16:43:51 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/03/03 15:52:25 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,6 +30,6 @@ clean:
 	docker compose down --volumes --rmi all
 
 
-re: clean all
+re: clean allz
 
 .PHONY: all clean re

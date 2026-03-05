@@ -2,6 +2,7 @@ import { Router } from "express";
 import User from "../models/User";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
 const router = Router();
 
@@ -32,24 +33,101 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
 	try {
 		const { username, password } = req.body;
-		
+
 		const user = await User.findOne({ where: { username } });
-		if (!user)
+		if (!user || !user.password)
 			return res.status(401).json({ error: "Identifiants incorrects" });
-		
+
 		const validPassword = await bcrypt.compare(password, user.password);
 		if (!validPassword)
 			return res.status(401).json({ error: "Identifiants incorrects" });
-		
+
 		const token = jwt.sign(
 			{ id: user.id, username: user.username },
 			process.env.JWT_SECRET || "secret",
 			{ expiresIn: "24h" }
 		);
-		
+
 		res.json({ token });
 	} catch (err) {
 		res.status(500).json({ error: "Erreur serveur" });
+	}
+});
+
+router.get("/auth/42", (req, res) => {
+	const callbackUrl = process.env.OAUTH_42_CALLBACK_URL || "";
+	const authUrl = `https://api.intra.42.fr/oauth/authorize?client_id=${process.env.OAUTH_42_UID}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=public`;
+	res.redirect(authUrl);
+});
+
+router.get("/auth/42/callback", async (req, res) => {
+	try {
+		const { code } = req.query;
+
+		if (!code) {
+			return res.redirect("http://localhost:8080/?error=no_code");
+		}
+
+		// 1. Échange le code contre un token d'accès
+		const tokenResponse = await axios.post(
+			"https://api.intra.42.fr/oauth/token",
+			{
+				grant_type: "authorization_code",
+				client_id: process.env.OAUTH_42_UID,
+				client_secret: process.env.OAUTH_42_SECRET,
+				code,
+				redirect_uri: process.env.OAUTH_42_CALLBACK_URL,
+			}
+		);
+
+		const accessToken = tokenResponse.data.access_token;
+
+		// 2. Récupère les infos utilisateur depuis l'API 42
+		const userResponse = await axios.get(
+			"https://api.intra.42.fr/v2/me",
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+
+		const userData = userResponse.data;
+		const login42 = userData.login;
+		const email = userData.email;
+		const profilePicture = userData.image?.link;
+
+		// 3. Cherche ou crée l'utilisateur
+		let user = await User.findOne({ where: { login_42: login42 } });
+
+		if (!user) {
+			// Crée un nouvel utilisateur
+			user = await User.create({
+				username: login42,
+				email,
+				login_42: login42,
+				profile_picture: profilePicture,
+			});
+		} else {
+			// Met à jour les infos (en cas de changement)
+			await user.update({
+				email,
+				profile_picture: profilePicture,
+			});
+		}
+
+		// 4. Génère un JWT pour la session
+		const jwtToken = jwt.sign(
+			{ id: user.id, username: user.username },
+			process.env.JWT_SECRET || "secret",
+			{ expiresIn: "24h" }
+		);
+
+		// 5. Redirige vers le frontend avec le token
+		res.redirect(`http://localhost:8080/index.html?token=${jwtToken}`);
+	} catch (err) {
+		console.error("OAuth 42 error:", err);
+		res.redirect("http://localhost:8080/?error=auth_failed");
 	}
 });
 
