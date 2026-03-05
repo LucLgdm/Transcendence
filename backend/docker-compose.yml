@@ -28,5 +28,33 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  nginx:
+    image: owasp/modsecurity-crs:nginx
+    ports:
+      - "443:443"
+    environment:
+      - PARANOIA=2
+      - ANOMALY_INBOUND=5
+      - ANOMALY_OUTBOUND=4
+      - PROXY=1
+      - BACKEND=http://app:3000
+      - SSL_CERT=/etc/nginx/certs/server.crt
+      - SSL_KEY=/etc/nginx/certs/server.key
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+
 volumes:
   db_data:
