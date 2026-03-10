@@ -35,3 +35,7 @@ export const auth = (req: AutRequest, res: Response, next: NextFunction) => {
     }
 
 }
+
+export interface AuthRequest extends Request {
+    user?: {id: number; username:string};
+}

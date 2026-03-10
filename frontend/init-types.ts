@@ -24,3 +24,18 @@ export interface ChessGame {
     movePiece(from: Position, to : Position): boolean;
     resetGame(): void;
 }
+
+export type Friend = {
+    id: number;
+    username: string;
+    email: string;
+    // avatarUrl?: string;
+};
+
+export type ChatMessage = {
+    id: number;
+    senderId: number;
+    receiverId: number;
+    content: string;
+    createdTimer: string;
+}
