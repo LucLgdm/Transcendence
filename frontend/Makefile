@@ -15,7 +15,8 @@ all:
 	docker build -t ts-dev .
 
 	@echo "Starting container..."
-	docker run -it --rm\
+	docker run -d --rm\
+		--name ts-dev-front \
 		-p 8080:3000 \
 		-v $(PWD)/frontend:/app \
 		ts-dev sh -c "\
@@ -25,9 +26,8 @@ all:
 
 clean:
 	@echo "Cleaning compiled files..."
+	-docker stop ts-dev-front 2>/dev/null || true
 	@rm -f *.js
-	@echo "Cleaning up Docker images and containers..."
-	docker compose down --volumes --rmi all
 
 
 re: clean all

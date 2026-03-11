@@ -15,7 +15,7 @@ all:
 	docker compose build
 
 	@echo "Starting services..."
-	docker compose up
+	docker compose up -d
 
 stop:
 	@echo "Stopping services..."

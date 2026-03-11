@@ -1,3 +1,83 @@
+function getAuthToken() {
+    return localStorage.getItem("token");
+}
+async function fetchFriends() {
+    const token = getAuthToken();
+    if (!token)
+        return [];
+    const res = await fetch("http://localhost:3000/friends", {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur fetch friends", res.status);
+        return [];
+    }
+    return res.json();
+}
+async function fetchChatMess(userId) {
+    const token = getAuthToken();
+    if (!token)
+        return [];
+    const res = await fetch(`https://localhost:3000/messages/${userId}`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        }
+    });
+    if (!res.ok) {
+        console.error("Erreur fetch chat messages", res.status);
+        return [];
+    }
+    return res.json();
+}
+async function sendChatMessage(userId, content) {
+    const token = getAuthToken();
+    if (!token)
+        return;
+    const res = await fetch(`https://localhost:3000/messages/${userId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+        console.error("Erreur sendChatMessage", res.status);
+    }
+}
+async function addFriendById(friendId) {
+    const token = getAuthToken();
+    if (!token)
+        return;
+    const res = await fetch(`http://localhost:3000/friends/${friendId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur addFriend", res.status);
+    }
+}
+async function deleteFriend(friendId) {
+    const token = getAuthToken();
+    if (!token)
+        return;
+    const res = await fetch(`http://localhost:3000/friends/${friendId}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur deleteFriend", res.status);
+    }
+}
 function initViewSwitching() {
     const buttons = document.querySelectorAll('nav button');
     const views = document.querySelectorAll('.view');
@@ -55,69 +135,113 @@ async function initProfile() {
         console.error('Erreur de récupération du profil:', error);
     }
 }
-function initFriends() {
-    const friendsList = document.getElementById('friends-list');
+async function initFriends() {
+    const friendsList = document.getElementById("friends-list");
     const addFriendForm = document.getElementById('add-friend-form');
-    const friends = JSON.parse(localStorage.getItem('friends') || '[]');
-    function saveFriends() {
-        localStorage.setItem('friends', JSON.stringify(friends));
-    }
+    const addFriendInput = document.getElementById('friend-name');
+    if (!friendsList)
+        return;
+    let friends = [];
     function renderFriends() {
-        if (friendsList) {
-            friendsList.innerHTML = friends.length > 0
-                ? friends.map(friend => `<li>${friend}</li>`).join('')
-                : '<li>Aucun ami pour le moment</li>';
+        if (friends.length === 0) {
+            friendsList.innerHTML = "<li>Aucun ami pour le moment</li>";
+            return;
         }
-    }
-    if (addFriendForm) {
-        addFriendForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('friend-name');
-            if (input && input.value.trim()) {
-                friends.push(input.value.trim());
-                saveFriends();
+        friendsList.innerHTML = friends.map((friend) => `<li ${friend.username} (${friend.email})>
+            <button data_friend_id="${friend.id}" class="delete_friend">Supprimer</button>
+            </li>`).join("");
+        friendsList.querySelectorAll('.delete_friend').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = Number(btn.dataset.friendId);
+                await deleteFriend(id);
+                friends = friends.filter((fr) => fr.id !== id);
                 renderFriends();
-                initProfileFriends();
-                input.value = '';
-            }
+            });
         });
     }
+    friends = await fetchFriends();
     renderFriends();
-    initProfileFriends();
+    if (addFriendForm && addFriendInput) {
+        addFriendForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const value = addFriendInput.value.trim();
+            if (!value)
+                return;
+            const friendId = Number(value);
+            if (Number.isNaN(friendId)) {
+                alert("Veuillez entrer un ID valide");
+                return;
+            }
+            await addFriendById(friendId);
+            friends = await fetchFriends();
+            renderFriends();
+            addFriendInput.value = "";
+        });
+    }
+}
+function renderProfileFriends(friends) {
+    const profileFriendsList = document.getElementById("friends_list");
+    if (!profileFriendsList)
+        return;
+    profileFriendsList.innerHTML =
+        friends.length === 0
+            ? "<li>Aucun ami pour le moment</li>"
+            : friends.map((f) => `<li>${f.username} (${f.email})</li>`).join("");
 }
 function initChat() {
-    const chatMessages = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const messages = [];
+    const messagesContainer = document.getElementById("chat-messages");
+    const chatForm = document.getElementById("chat-form");
+    const chatInput = document.getElementById("chat-input");
+    const chatUserIdInput = document.getElementById("chat-user-id");
+    const chatLoadBtn = document.getElementById("chat-load");
+    if (!messagesContainer || !chatForm || !chatInput || !chatUserIdInput || !chatLoadBtn) {
+        return;
+    }
+    let currentOtherUserId = null;
+    let messages = [];
     function renderMessages() {
-        if (chatMessages) {
-            chatMessages.innerHTML = messages.length > 0
-                ? messages.map(msg => `
-                    <div class="message">
-                        <strong>${msg.user}</strong>: ${msg.message}
-                        <small>${msg.time.toLocaleTimeString()}</small>
-                    </div>
-                `).join('')
-                : '<p>Aucun message</p>';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        messagesContainer.innerHTML =
+            messages.length === 0
+                ? "<p>Aucun message</p>"
+                : messages
+                    .map((m) => `
+                <div class="message">
+                  <strong>${m.senderId}</strong> : ${m.content}
+                  <small>${new Date(m.createdTimer).toLocaleTimeString()}</small>
+                </div>
+              `)
+                    .join("");
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    async function loadConversation() {
+        const value = chatUserIdInput.value.trim();
+        const otherId = Number(value);
+        if (!value || Number.isNaN(otherId)) {
+            alert("Entrez un ID d'utilisateur valide");
+            return;
         }
+        currentOtherUserId = otherId;
+        messages = await fetchChatMess(otherId);
+        renderMessages();
     }
-    if (chatForm) {
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('chat-input');
-            if (input && input.value.trim()) {
-                messages.push({
-                    user: 'Moi', // TODO: Récupérer le nom d'utilisateur actuel
-                    message: input.value.trim(),
-                    time: new Date()
-                });
-                renderMessages();
-                input.value = '';
-            }
-        });
-    }
-    renderMessages();
+    chatLoadBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadConversation();
+    });
+    chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (currentOtherUserId === null) {
+            alert("Choisissez d'abord un utilisateur avec qui chatter");
+            return;
+        }
+        const content = chatInput.value.trim();
+        if (!content)
+            return;
+        await sendChatMessage(currentOtherUserId, content);
+        messages = await fetchChatMess(currentOtherUserId);
+        renderMessages();
+        chatInput.value = "";
+    });
 }
 function initGames() {
     // pong init a changer si jamais
