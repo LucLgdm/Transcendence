@@ -1,9 +1,27 @@
-import type { Friend, ChatMessage } from "./init-types";
+import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
 
 function getAuthToken(): string | null {
     return localStorage.getItem("token");
 }
   
+async function fetchUserMatches(userId: number): Promise<Match[]> {
+    const token = getAuthToken();
+    if (!token) return [];
+  
+    const res = await fetch(`http://localhost:3000/remindmatch/users/${userId}/matches`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+  
+    if (!res.ok) {
+      console.error("Erreur fetch matches", res.status);
+      return [];
+    }
+  
+    return res.json();
+}
+
 async function fetchFriends(): Promise<Friend[]> {
   const token = getAuthToken();
   if (!token) return [];
@@ -91,6 +109,44 @@ async function deleteFriend(friendId: number): Promise<void> {
   }
 }
 
+async function podMatch(pload: {
+    game: string;
+    player1ID: number;
+    player2ID: number;
+    winnerID: number | null;
+    scoreP1: number | null;
+    scoreP2: number | null;
+}): Promise<void> {
+    const token = getAuthToken();
+    if (!token) {
+        alert("Veuillez vous connecter pour déclarer une partie");
+        return;
+    }
+    const res = await fetch("http://localhost:3000/remind-matches", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(pload),
+    });
+    if (!res.ok) {
+        alert("Erreur lors de la déclaration de la partie");
+        return;
+    } else {
+        alert("Partie déclarée avec succès");
+    }
+}
+
+async function fetchLeaderboard(game: string): Promise<LeaderbordRow[]> {
+  const res = await fetch(`http://localhost:3000/remindmatch/leaderboard?game=${encodeURIComponent(game)}`);
+  if (!res.ok) {
+    console.error("Erreur fetch leaderboard", res.status);
+    return [];
+  }
+  return res.json();
+}
+
 function initViewSwitching(): void {
     const buttons = document.querySelectorAll<HTMLButtonElement>('nav button');
     const views = document.querySelectorAll<HTMLElement>('.view');
@@ -107,57 +163,93 @@ function initViewSwitching(): void {
     });
 }
 
-// fonction asynchrone pour récupérer les informations du profil
 async function initProfile(): Promise<void> {
-    const profileInfo = document.getElementById('profile-info');
-    const avatarImg = document.getElementById('profile-avatar') as HTMLImageElement | null;
+    const profileInfo = document.getElementById("profile-info");
+    const avatarImg = document.getElementById("profile-avatar") as HTMLImageElement | null;
     if (!profileInfo) 
         return;
-
-    const token = localStorage.getItem('token');
+  
+    const token = localStorage.getItem("token");
     if (!token) {
-        profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
-        if (avatarImg) {
-            avatarImg.src = 'https://via.placeholder.com/150?text=Guest';
-        }
-        return;
+      profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
+      if (avatarImg) {
+        avatarImg.src = "https://via.placeholder.com/150?text=Guest";
+      }
+      return;
     }
 
     try {
-        const reponse = await fetch('http://localhost:3000/users/me', {
-            method: 'GET',
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-        });
-
-        if (!reponse.ok) {
-            profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
-            return;
+      const reponse = await fetch("http://localhost:3000/users/me", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+  
+      if (!reponse.ok) {
+        profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+        return;
+      }
+  
+      const user = await reponse.json() as {
+        id: number;
+        username: string;
+        email: string;
+        createdAT?: string;
+        avatar?: string;
+      };
+      const currentUserId = user.id;
+  
+      profileInfo.innerHTML = `
+        <p>Nom d'utilisateur: ${user.username}</p>
+        <p>Email: ${user.email}</p>
+        <p>Date de création: ${
+          user.createdAT ? new Date(user.createdAT).toLocaleDateString() : "N/A"
+        }</p>
+      `;
+  
+      if (avatarImg) {
+        avatarImg.src =
+          user.avatar && user.avatar.length > 0
+            ? user.avatar
+            : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || "U")}`;
+      }
+  
+      const matches = await fetchUserMatches(currentUserId);
+      const matchesList = document.getElementById("profile-matches");
+  
+      if (matchesList) {
+        if (matches.length === 0) {
+          matchesList.innerHTML = "<li>Aucun match enregistré pour le moment</li>";
+        } else {
+          matchesList.innerHTML = matches
+            .map((m) => {
+              const date = new Date(m.createdAt).toLocaleString();
+              let result: string;
+  
+              if (m.winnerID === null) {
+                result = "Match nul";
+              } else if (m.winnerID === currentUserId) {
+                result = "Victoire";
+              } else {
+                result = "Défaite";
+              }
+  
+              const adversaireId =
+                m.player1ID === currentUserId ? m.player2ID : m.player1ID;
+  
+              return `<li>
+                [${m.game}] ${result} vs joueur ${adversaireId}
+                (score: ${m.scoreP1 ?? "-"} - ${m.scoreP2 ?? "-"}) le ${date}
+              </li>`;
+            })
+            .join("");
         }
-
-        const user = await reponse.json() as {
-            id: number;
-            username: string;
-            email: string;
-            createdAT?: string;
-            avatar?: string;
-        }
-
-        profileInfo.innerHTML = `
-            <p>Nom d'utilisateur: ${user.username}</p>
-            <p>Email: ${user.email}</p>
-            <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : 'N/A'}</p>
-        `;
-        if (avatarImg) {
-            avatarImg.src = user.avatar && user.avatar.length > 0
-                ? user.avatar
-                : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || 'U')}`;
-        }
-        } catch (error) {
-            profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
-            console.error('Erreur de récupération du profil:', error);
+      }
+    } catch (error) {
+      profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+      console.error("Erreur de récupération du profil:", error);
     }
 }
 
@@ -306,27 +398,70 @@ function initGames(): void {
    initChess();
 }
 
-function initLeaderboard(): void {
-    const leaderboardTable = document.querySelector('#leaderboard-table tbody');
-
-
-    const scores: Array<{ player: string; score: number; game: string }> = [
-        { player: 'Joueur1', score: 1500, game: 'Pong' },
-        { player: 'Joueur2', score: 1200, game: 'Chess' },
-        { player: 'Joueur3', score: 1000, game: 'Pong' }
-    ];
-
-    if (leaderboardTable) {
-        leaderboardTable.innerHTML = scores
-            .sort((a, b) => b.score - a.score)
-            .map(score => `
-                <tr>
-                    <td>${score.player}</td>
-                    <td>${score.score}</td>
-                    <td>${score.game}</td>
-                </tr>
-            `).join('');
+async function initLeaderboard(): Promise<void> {
+    const leaderboardTable = document.querySelector("#leaderboard-table tbody");
+    if (!leaderboardTable) return;
+  
+    const rows = await fetchLeaderboard("chess");
+  
+    if (rows.length === 0) {
+      leaderboardTable.innerHTML = `
+        <tr>
+          <td colspan="3">Aucun résultat pour le moment</td>
+        </tr>
+      `;
+      return;
     }
+  
+    leaderboardTable.innerHTML = rows
+      .map((row) => {
+        const username = row.player1?.username ?? `User #${row.winnerID}`;
+        return `
+          <tr>
+            <td>${username}</td>
+            <td>${row.wins}</td>
+            <td>${"chess"}</td>
+          </tr>
+        `;
+      })
+      .join("");
+}
+
+function initMatchForm(): void {
+    const form = document.getElementById('match-form') as HTMLFormElement | null;
+    if (!form)
+        return;
+
+    const gameSelected = document.getElementById('match-game') as HTMLSelectElement | null;
+    const matchplayer1 = document.getElementById('match-p1') as HTMLInputElement | null;
+    const matchplayer2 = document.getElementById('match-p2') as HTMLInputElement | null;
+    const matchwinner = document.getElementById('match-winner') as HTMLInputElement | null;
+    const matchscore1 = document.getElementById('match-score1') as HTMLInputElement | null;
+    const matchscore2 = document.getElementById('match-score2') as HTMLInputElement | null;
+
+    if (!gameSelected || !matchplayer1 || !matchplayer2 || !matchwinner || !matchscore1 || !matchscore2 )
+        return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const game = gameSelected.value;
+        const player1 = Number(matchplayer1.value);
+        const player2 = Number(matchplayer2.value);
+        const winner = Number(matchwinner.value);
+        const score1 = Number(matchscore1.value);
+        const score2 = Number(matchscore2.value);
+
+        if (!player1 || !player2) {
+            alert("manque un joeur");
+            return;
+        }
+
+        const winnerId = winner === 0 ? null : winner;
+
+        await podMatch({game, player1ID: player1, player2ID: player2, winnerID: winnerId, scoreP1: score1, scoreP2: score2});
+    });
+
+    form.reset();
 }
 
 function main(): void {
@@ -337,6 +472,7 @@ function main(): void {
     initGames();
     initLeaderboard();
     initSidebarToggle();
+    initMatchForm();
 }
 
 if (document.readyState === 'loading') {

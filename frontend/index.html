@@ -66,6 +66,52 @@
         <section id="view-games" class="view" hidden>
             <h2>Jeux</h2>
 
+
+            <div id="game-report">
+                <h3>Déclarer la partie finie</h3>
+                <form id="match-form">
+                  <label>
+                    Jeu :
+                    <select id="match-game">
+                      <option value="chess">Chess</option>
+                      <option value="pong">Pong</option>
+                    </select>
+                  </label>
+                  <br />
+            
+                  <label>
+                    ID joueur 1 :
+                    <input type="number" id="match-p1" required />
+                  </label>
+                  <br />
+            
+                  <label>
+                    ID joueur 2 :
+                    <input type="number" id="match-p2" required />
+                  </label>
+                  <br />
+            
+                  <label>
+                    ID vainqueur (0 = nul) :
+                    <input type="number" id="match-winner" value="0" />
+                  </label>
+                  <br />
+            
+                  <label>
+                    Score joueur 1 :
+                    <input type="number" id="match-score1" />
+                  </label>
+                  <br />
+            
+                  <label>
+                    Score joueur 2 :
+                    <input type="number" id="match-score2" />
+                  </label>
+                  <br />
+            
+                  <button type="submit">Enregistrer le match</button>
+                </form>
+            </div>
             <div id="pong-container">
                 <h3>Pong</h3>
                 <canvas id="pong-canvas" width="600" height="400"></canvas>

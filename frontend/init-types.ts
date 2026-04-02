@@ -32,6 +32,26 @@ export type Friend = {
     // avatarUrl?: string;
 };
 
+export type Match = {
+        id: number;
+        game: string;
+        player1ID: number;
+        player2ID: number;
+        winnerID: number | null;
+        scoreP1: number | null;
+        scoreP2: number | null;
+        createdAt: string;
+};
+
+export type LeaderbordRow = {
+    winnerId: number;
+    wins: number;
+    player: {
+        id: number;
+        username: string;
+    };
+};
+
 export type ChatMessage = {
     id: number;
     senderId: number;

@@ -4,6 +4,7 @@ import User from "./models/User";
 import Friendship from "./models/Friendship";
 import userRoutes from "./routes/index";
 import FriendRoute from "./routes/friend";
+import remindMatchRoute from "./routes/remindmatch";
 import messageRoute from "./routes/Message";
 import cors from 'cors';
 const app = express();
@@ -17,6 +18,7 @@ app.use(cors({
 app.use("/users", userRoutes);
 app.use("/friends", FriendRoute);
 app.use("/messages", messageRoute);
+app.use("/remind-matches", remindMatchRoute);
 async function bootstrap() {
 	await connectDatabase();
 	// Création des tables si elles n'existent pas

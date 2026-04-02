@@ -5,7 +5,6 @@ const form = document.getElementById("loginForm") as HTMLFormElement;
 const usernameInput = document.getElementById("username") as HTMLInputElement;
 const passwordInput = document.getElementById("password") as HTMLInputElement;
 
-// Attention : Tout ce qui est en dehors de l'evenement s'execute tout de suite
 form.addEventListener("submit", async (event) => {
 	event.preventDefault();
 

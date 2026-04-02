@@ -29,7 +29,6 @@ clean:
 	-docker stop ts-dev-front 2>/dev/null || true
 	@rm -f *.js
 
-
 re: clean all
 
 .PHONY: all clean re
