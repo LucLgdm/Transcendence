@@ -17,7 +17,7 @@ all:
 	@echo "Starting container..."
 	docker run -it --rm\
 		-p 8080:3000 \
-		-v $(PWD)/frontend:/app \
+		-v $(PWD):/app \
 		ts-dev sh -c "\
 			tsc && \
 			serve . \
@@ -30,6 +30,6 @@ clean:
 	docker compose down --volumes --rmi all
 
 
-re: clean allz
+re: clean all
 
 .PHONY: all clean re
