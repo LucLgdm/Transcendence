@@ -95,7 +95,7 @@ function initChat(): void {
 
 function initGames(): void {
     initPong();
-    initChess();
+    // initChess();
 }
 
 function initLeaderboard(): void {

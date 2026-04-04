@@ -12,7 +12,7 @@ export class GameEngine {
 		const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 		this.sceneSetup = new PongScene(canvas);
 		
-		this.player = new Paddle(-12, 0x00ff00); // Left side
+		this.player = new Paddle(-12, 0x00ff00);
 		this.ball = new Ball();
 
 		this.sceneSetup.scene.add(this.player.mesh);
@@ -48,6 +48,7 @@ export function initPong(): void {
 		return; 
 	}
 	if (!pongInstance) {
+		console.log("Initializing Pong");
 		pongInstance = new GameEngine('pong-canvas');
 	}
 }
