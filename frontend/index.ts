@@ -94,21 +94,8 @@ function initChat(): void {
 }
 
 function initGames(): void {
-    // pong init a changer si jamais
-    const pongCanvas = document.getElementById('pong-canvas') as HTMLCanvasElement;
-    if (pongCanvas) {
-        const ctx = pongCanvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
-            ctx.fillStyle = '#fff';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Pong - À implémenter', pongCanvas.width / 2, pongCanvas.height / 2);
-        }
-    }
-
-   initChess();
+    initPong();
+    initChess();
 }
 
 function initLeaderboard(): void {
@@ -150,3 +137,4 @@ if (document.readyState === 'loading') {
 }
 
 import {initChess}  from "./chess.js";
+import { initPong } from './pong/GameEngine.js';

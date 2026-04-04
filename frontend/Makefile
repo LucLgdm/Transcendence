@@ -26,8 +26,11 @@ all:
 clean:
 	@echo "Cleaning compiled files..."
 	@rm -f *.js
-	@echo "Cleaning up Docker images and containers..."
-	docker compose down --volumes --rmi all
+	@rm -f pong/*.js
+	@echo "Cleaning up Frontend image"
+	-docker stop ts-dev 2>/dev/null || true
+	-docker rm ts-dev 2>/dev/null || true
+	-docker rmi ts-dev 2>/dev/null || true
 
 
 re: clean all
