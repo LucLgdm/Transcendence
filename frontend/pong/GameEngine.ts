@@ -5,6 +5,7 @@ import { Ball } from './Ball.js';
 export class GameEngine {
 	private sceneSetup: PongScene;
 	private player: Paddle;
+	private Splayer : Paddle;
 	private ball: Ball;
 	private keys: { [key: string]: boolean } = {};
 
@@ -12,11 +13,13 @@ export class GameEngine {
 		const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 		this.sceneSetup = new PongScene(canvas);
 		
-		this.player = new Paddle(-12, 0x00ff00);
-		this.ball = new Ball();
-
+		this.player = new Paddle(-12, 0, 0, 0x312bfb);
+		this.ball = new Ball(0, 0.1, 0, 0xfb2b2b);
+		this.Splayer = new Paddle(12, 0, 0, 0x312bfb);
+		
 		this.sceneSetup.scene.add(this.player.mesh);
 		this.sceneSetup.scene.add(this.ball.mesh);
+		this.sceneSetup.scene.add(this.Splayer.mesh);
 
 		window.addEventListener('keydown', (e) => this.keys[e.key] = true);
 		window.addEventListener('keyup', (e) => this.keys[e.key] = false);
