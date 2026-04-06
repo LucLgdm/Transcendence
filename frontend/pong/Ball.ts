@@ -11,11 +11,18 @@ export class Ball {
 		this.mesh.position.set(x, y, z);
 	}
 
+	reset() {
+		this.mesh.position.set(0, 0.1, 0);
+		// Randomize initial trajectory on reset
+		this.velocity.x = (Math.random() > 0.5 ? 1 : -1) * 0.15;
+		this.velocity.z = (Math.random() - 0.5) * 0.2;
+	}
+
 	update() {
 		this.mesh.position.x += this.velocity.x;
 		this.mesh.position.z += this.velocity.z;
 
-		// Simple bounce logic for the top/bottom walls
+		// Top/Bottom wall bounce (Z-axis)
 		if (Math.abs(this.mesh.position.z) > 7) {
 			this.velocity.z *= -1;
 		}
