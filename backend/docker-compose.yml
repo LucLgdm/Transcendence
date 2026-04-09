@@ -31,7 +31,7 @@ services:
   nginx:
     image: owasp/modsecurity-crs:nginx
     ports:
-      - "443:443"
+      - "8443:8443"
     environment:
       - PARANOIA=2
       - ANOMALY_INBOUND=5
