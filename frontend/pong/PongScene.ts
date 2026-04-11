@@ -9,7 +9,7 @@ export class PongScene {
 	private scoreContext: CanvasRenderingContext2D;
 	private scoreCanvas: HTMLCanvasElement;
 
-	constructor(canvas: HTMLCanvasElement) {
+	constructor(canvas: HTMLCanvasElement, themeColor: number) {
 		this.scene = new THREE.Scene();
 		this.scene.background = new THREE.Color(0x111111);
 		
@@ -17,7 +17,7 @@ export class PongScene {
 		const h = canvas.clientHeight || 400;
 		
 		this.camera = new THREE.PerspectiveCamera(75, w/h, 0.1, 1000);
-		this.camera.position.set(0, 12, 12);
+		this.camera.position.set(0, 15, 18);
 		this.camera.lookAt(0, 0, 0);
 
 		this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
@@ -61,7 +61,7 @@ export class PongScene {
 		
 		// Arena Boundaries
 		const wallGeo = new THREE.BoxGeometry(30, 1, 0.5);
-		const wallMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+		const wallMat = new THREE.MeshStandardMaterial({ color: themeColor });
 		
 		const topWall = new THREE.Mesh(wallGeo, wallMat);
 		topWall.position.set(0, 0.5, -7.25);

@@ -67,6 +67,38 @@
 
             <div id="pong-container">
                 <h3>Pong</h3>
+                <div id="pong-menu" style="position: absolute; width: 600px; height: 400px; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; z-index: 10;">
+                    <h2>Pong Configuration</h2>
+                    
+                    <label>Game Mode:
+                        <select id="config-mode">
+                            <option value="pvp">Player vs Player</option>
+                            <option value="ai">Player vs AI (Coming Soon)</option>
+                        </select>
+                    </label><br>
+                
+                    <label>Map Theme:
+                        <select id="config-theme">
+                            <option value="0x444444">Classic Grey</option>
+                            <option value="0x00ffff">Neon Cyan</option>
+                            <option value="0xff00ff">Synthwave Pink</option>
+                        </select>
+                    </label><br>
+                
+                    <label>Game Speed:
+                        <select id="config-speed">
+                            <option value="1.0">Normal</option>
+                            <option value="1.5">Fast</option>
+                            <option value="2.0">Insane</option>
+                        </select>
+                    </label><br>
+                
+                    <label>
+                        <input type="checkbox" id="config-powerups"> Enable Power-ups (Multi-ball)
+                    </label><br>
+                
+                    <button id="start-game-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Start Game</button>
+                </div>
                 <canvas id="pong-canvas" width="600" height="400"></canvas>
             </div>
 
