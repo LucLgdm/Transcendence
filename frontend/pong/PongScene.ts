@@ -22,6 +22,7 @@ export class PongScene {
 
 		this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
 		this.renderer.setSize(w, h, false);
+		this.renderer.setPixelRatio(window.devicePixelRatio);
 
 		// Scoreboard initialization via CanvasTexture
 		this.scoreCanvas = document.createElement('canvas');
