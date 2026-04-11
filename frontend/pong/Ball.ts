@@ -2,15 +2,15 @@ import * as THREE from 'three';
 
 export class Ball {
 	public mesh: THREE.Mesh;
-	public velocity = { x: 0.15, z: 0.12 };
+	public velocity = { x: 0.12, z: 0.12 };
 
 	constructor(x: number, y: number, z: number, color: number, speedMultiplier: number) {
 		const geometry = new THREE.SphereGeometry(0.4, 32, 32);
 		const material = new THREE.MeshStandardMaterial({ color : color });
 		this.mesh = new THREE.Mesh(geometry, material);
 		this.mesh.position.set(x, y, z);
-		this.velocity.x *= speedMultiplier;
-		this.velocity.z *= speedMultiplier;
+		this.velocity.x *= (Math.random() > 0.5 ? 1 : -1) * speedMultiplier;
+		this.velocity.z *= (Math.random() > 0.5 ? 1 : -1) * speedMultiplier;
 	}
 
 	reset() {
