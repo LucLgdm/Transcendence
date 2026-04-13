@@ -3,7 +3,7 @@ import { Paddle } from './Paddle.js';
 import { Ball } from './Ball.js';
 
 export interface GameSettings {
-	mode: 'pvp' | 'ai';
+	mode: 'pvp' | 'ai' | 'aix2';
 	themeColor: number; // Hex code for the map walls
 	ballSpeedMultiplier: number;
 	paddleSpeedMultiplier: number;
@@ -112,16 +112,22 @@ export class GameEngine {
 	private gameLoop = () => {
 		requestAnimationFrame(this.gameLoop);
 
-		// AI Logic hook
-		if (this.settings.mode === 'ai') {
-			// Future AI movement logic here
-		} else {
-			if (this.keys['o'] || this.keys['arrowup']) this.Splayer.moveUp();
-			if (this.keys['l'] || this.keys['arrowdown']) this.Splayer.moveDown();
+		if (this.balls.length > 0) {
+			const targetBall = this.balls[0].mesh;
+	
+			if (this.settings.mode === 'ai' || this.settings.mode === 'aix2') {
+				this.Splayer.movementAI(targetBall);
+			} else {
+				if (this.keys['o'] || this.keys['arrowup']) this.Splayer.moveUp();
+				if (this.keys['l'] || this.keys['arrowdown']) this.Splayer.moveDown();
+			}
+			if (this.settings.mode === 'aix2') {
+				this.player.movementAI(targetBall);
+			} else {
+				if (this.keys['w']) this.player.moveUp();
+				if (this.keys['s']) this.player.moveDown();
+			}
 		}
-
-		if (this.keys['w']) this.player.moveUp();
-		if (this.keys['s']) this.player.moveDown();
 
 		// Update all balls
 		this.balls.forEach(ball => ball.update());

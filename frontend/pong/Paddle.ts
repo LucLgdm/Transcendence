@@ -25,4 +25,16 @@ export class Paddle {
 			this.mesh.position.z += this.speed; 
 		}
 	}
+	
+	movementAI(ballMesh: THREE.Mesh) {
+		const ballZ = ballMesh.position.z;
+		const paddleZ = this.mesh.position.z;
+		const deadzone = 0.1; // Prevents it moving weird
+	
+		if (ballZ < paddleZ - deadzone) {
+			this.moveUp();
+		} else if (ballZ > paddleZ + deadzone) {
+			this.moveDown();
+		}
+	}
 }
