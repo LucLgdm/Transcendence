@@ -80,42 +80,59 @@ export class GameEngine {
 	private checkCollisions() {
 		if (this.isResetting) return;
 
-		// Loop through ALL active balls
-		for (let i = 0; i < this.balls.length; i++) {
-			const ball = this.balls[i];
-			const ballPos = ball.mesh.position;
-			const p1Pos = this.Lplayer.mesh.position;
-			const p2Pos = this.Rplayer.mesh.position;
+	// Derived constants for hit detection
+	const PADDLE_HALF_DEPTH = GAME_CONFIG.PADDLE.DEPTH / 2;
+	const COLLISION_X = GAME_CONFIG.PADDLE.POS_X - (GAME_CONFIG.PADDLE.WIDTH / 2) - GAME_CONFIG.BALL.RADIUS;
+	const COLLISION_Z_RANGE = PADDLE_HALF_DEPTH + GAME_CONFIG.BALL.RADIUS;
 
-			// Player 1 Collision
-			if (ballPos.x < -11.5 && ballPos.x > -12.5 && Math.abs(ballPos.z - p1Pos.z) < 2.2) {
-				ball.velocity.x = Math.abs(ball.velocity.x) * 1.05;
-			}
-			// Player 2 Collision
-			if (ballPos.x > 11.5 && ballPos.x < 12.5 && Math.abs(ballPos.z - p2Pos.z) < 2.2) {
-				ball.velocity.x = -Math.abs(ball.velocity.x) * 1.05;
-			}
+	for (let i = 0; i < this.balls.length; i++) {
+		const ball = this.balls[i];
+		const ballPos = ball.mesh.position;
+		
+		// Define which paddle we are checking against based on ball position
+		const isLeftZone = ballPos.x < 0;
+		const paddle = isLeftZone ? this.Lplayer : this.Rplayer;
+		const paddleZ = paddle.mesh.position.z;
 
-			// Scoring Logic
-			if (Math.abs(ballPos.x) > 15) {
-				this.isResetting = true;
-				if (ballPos.x < 0) this.score.right++;
-				else this.score.left++;
-				
-				this.sceneSetup.updateScore(this.score.left, this.score.right);
+		// Check X-axis proximity
+		const isAtX = isLeftZone ? (ballPos.x <= -COLLISION_X) : (ballPos.x >= COLLISION_X);
+		const isPastX = isLeftZone ? (ballPos.x > -(GAME_CONFIG.PADDLE.POS_X + 1)) : (ballPos.x < (GAME_CONFIG.PADDLE.POS_X + 1));
 
-				setTimeout(() => {
-					// Reset to single ball on score
-					this.balls.forEach(b => this.sceneSetup.scene.remove(b.mesh));
-					this.balls = [];
-					this.spawnBall();
-					this.isResetting = false;
-				}, 1000);
-				break; // Stop checking other balls this frame if someone scored
+		if (isAtX && isPastX) {
+			// Calculate distance from paddle center (Impact Point)
+			const impact = ballPos.z - paddleZ;
+
+			if (Math.abs(impact) <= COLLISION_Z_RANGE) {
+				// 1. Directional Flip: Ensure ball moves away from the paddle
+				ball.velocity.x = (isLeftZone ? 1 : -1) * Math.abs(ball.velocity.x) * 1.05;
+
+				// 2. Trajectory Mapping: Map impact (-2.2 to 2.2) to Z velocity
+				// This replaces the "V" bounce with a skill-based angle
+				ball.velocity.z = impact * 0.15;
+
+				// 3. Position Correction: Prevent the ball from getting stuck
+				ballPos.x = isLeftZone ? -COLLISION_X : COLLISION_X;
 			}
 		}
-	}
+	
+		// Scoring Logic
+		if (Math.abs(ballPos.x) > GAME_CONFIG.ARENA.SCORE_X) {
+			this.isResetting = true;
+			if (ballPos.x < 0) this.score.right++;
+			else this.score.left++;
+			
+			this.sceneSetup.updateScore(this.score.left, this.score.right);
 
+			setTimeout(() => {
+				this.balls.forEach(b => this.sceneSetup.scene.remove(b.mesh));
+				this.balls = [];
+				this.spawnBall();
+				this.isResetting = false;
+			}, 1000);
+			break; 
+		}
+	}
+}
 	private gameLoop = () => {
 		requestAnimationFrame(this.gameLoop);
 
