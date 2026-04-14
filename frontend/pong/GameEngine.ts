@@ -1,6 +1,7 @@
 import { PongScene } from './PongScene.js';
 import { Paddle } from './Paddle.js';
 import { Ball } from './Ball.js';
+import { GAME_CONFIG } from './constants.js';
 
 export interface GameSettings {
 	mode: 'pvp' | 'ai' | 'aix2';
@@ -21,8 +22,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
 // GameEngine.ts (Updated portions)
 export class GameEngine {
 	private sceneSetup: PongScene;
-	private player: Paddle;
-	private Splayer: Paddle;
+	private Lplayer: Paddle; // Left paddle
+	private Rplayer: Paddle; // Right paddle
 	private balls: Ball[] = []; // Array to handle power-up duplicates
 	private settings: GameSettings;
 	private keys: { [key: string]: boolean } = {};
@@ -36,12 +37,18 @@ export class GameEngine {
 		// Pass theme to Scene
 		this.sceneSetup = new PongScene(canvas, settings.themeColor);
 		
-		// Pass speed multipliers to Paddles
-		this.player = new Paddle(-12, 0.25, 0, 0x312bfb, settings.paddleSpeedMultiplier);
-		this.Splayer = new Paddle(12, 0.25, 0, 0x312bfb, settings.paddleSpeedMultiplier);
+		// Instantiation of paddles
+		this.Lplayer = new Paddle(-GAME_CONFIG.PADDLE.POS_X,
+			GAME_CONFIG.PADDLE.POS_Y,
+			GAME_CONFIG.PADDLE.POS_Z, 
+			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier); // left paddle
+		this.Rplayer = new Paddle(GAME_CONFIG.PADDLE.POS_X,
+			GAME_CONFIG.PADDLE.POS_Y,
+			GAME_CONFIG.PADDLE.POS_Z,
+			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier); // right paddle
 		
-		this.sceneSetup.scene.add(this.player.mesh);
-		this.sceneSetup.scene.add(this.Splayer.mesh);
+		this.sceneSetup.scene.add(this.Lplayer.mesh);
+		this.sceneSetup.scene.add(this.Rplayer.mesh);
 
 		// Spawn initial ball
 		this.spawnBall();
@@ -58,7 +65,7 @@ export class GameEngine {
 	}
 
 	private spawnBall() {
-		const newBall = new Ball(0, 0.4, 0, 0xfb2b2b, this.settings.ballSpeedMultiplier);
+		const newBall = new Ball(0, GAME_CONFIG.BALL.SPAWN_Y, 0, 0xfb2b2b, this.settings.ballSpeedMultiplier);
 		this.balls.push(newBall);
 		this.sceneSetup.scene.add(newBall.mesh);
 	}
@@ -77,8 +84,8 @@ export class GameEngine {
 		for (let i = 0; i < this.balls.length; i++) {
 			const ball = this.balls[i];
 			const ballPos = ball.mesh.position;
-			const p1Pos = this.player.mesh.position;
-			const p2Pos = this.Splayer.mesh.position;
+			const p1Pos = this.Lplayer.mesh.position;
+			const p2Pos = this.Rplayer.mesh.position;
 
 			// Player 1 Collision
 			if (ballPos.x < -11.5 && ballPos.x > -12.5 && Math.abs(ballPos.z - p1Pos.z) < 2.2) {
@@ -116,16 +123,16 @@ export class GameEngine {
 			const targetBall = this.balls[0].mesh;
 	
 			if (this.settings.mode === 'ai' || this.settings.mode === 'aix2') {
-				this.Splayer.movementAI(targetBall);
+				this.Rplayer.movementAI(targetBall);
 			} else {
-				if (this.keys['o'] || this.keys['arrowup']) this.Splayer.moveUp();
-				if (this.keys['l'] || this.keys['arrowdown']) this.Splayer.moveDown();
+				if (this.keys['o'] || this.keys['arrowup']) this.Rplayer.moveUp();
+				if (this.keys['l'] || this.keys['arrowdown']) this.Rplayer.moveDown();
 			}
 			if (this.settings.mode === 'aix2') {
-				this.player.movementAI(targetBall);
+				this.Lplayer.movementAI(targetBall);
 			} else {
-				if (this.keys['w']) this.player.moveUp();
-				if (this.keys['s']) this.player.moveDown();
+				if (this.keys['w']) this.Lplayer.moveUp();
+				if (this.keys['s']) this.Lplayer.moveDown();
 			}
 		}
 
@@ -146,7 +153,7 @@ export function initPong(): void {
 
 	startBtn.addEventListener('click', () => {
 		// 1. Gather settings from DOM
-		const mode = (document.getElementById('config-mode') as HTMLSelectElement).value as 'pvp' | 'ai';
+		const mode = (document.getElementById('config-mode') as HTMLSelectElement).value as 'pvp' | 'ai' | 'aix2';
 		const themeColor = parseInt((document.getElementById('config-theme') as HTMLSelectElement).value);
 		const speed = parseFloat((document.getElementById('config-speed') as HTMLSelectElement).value);
 		const powerups = (document.getElementById('config-powerups') as HTMLInputElement).checked;

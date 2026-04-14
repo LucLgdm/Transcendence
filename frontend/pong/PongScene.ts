@@ -57,7 +57,7 @@ export class PongScene {
 		});
 		const table = new THREE.Mesh(tableGeo, tableMat);
 		table.rotation.x = -Math.PI / 2;
-		table.position.y = -0.05; // Offset to prevent Z-fighting
+		table.position.y = -0.05;
 		this.scene.add(table);
 		
 		// Arena Boundaries
