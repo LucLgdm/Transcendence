@@ -157,6 +157,11 @@ function initViewSwitching(): void {
     const pongContainer = document.getElementById("pong-container");
     const gameReport = document.getElementById("game-report");
     const matchGame = document.getElementById("match-game") as HTMLSelectElement | null;
+    const protectedViews = new Set(["profile", "friends", "chat"]);
+
+    function isAuthenticated(): boolean {
+        return Boolean(getAuthToken());
+    }
 
     function showGamesChoice(): void {
         if (gamesChoice) gamesChoice.hidden = false;
@@ -178,6 +183,11 @@ function initViewSwitching(): void {
     }
 
     function setActiveView(target: string): void {
+        if (protectedViews.has(target) && !isAuthenticated()) {
+            alert("Veuillez vous connecter pour accéder à cette section.");
+            target = "Login";
+        }
+
         views.forEach((view) => {
             view.hidden = view.id !== `view-${target}`;
         });

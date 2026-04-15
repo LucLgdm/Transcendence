@@ -176,33 +176,25 @@
 		<section id="view-Login" class="view" hidden>
 			<h2>Login</h2>
 			<form id="loginForm">
-				<!-- champs login -->
 				<div>
-					<label for="username">Identifiant :</label><br>
+					<label for="username">Identifiant :</label>
 					<input type="text" id="username" name="username" required>
 				</div>
-
-				<br>
 				<div>
-					<label for="password">Mot de passe :</label><br>
+					<label for="password">Mot de passe :</label>
 					<input type="password" id="password" name="password" required>
 				</div>
-
-				<br>
-				<button type="submit">Se connecter</button>
-
 				<button
-					id = "createAccountBtn"
+					id="createAccountBtn"
+					class="login-btn login-btn-primary"
 					type="button"
 					onclick="window.location.href='register.html'">
 					Créer un compte
 				</button>
-
-				<br>
-					<a id="oauth42Link" href="#">
-						Connect with 42
-					</a>
-				<br>
+				<div class="login-actions">
+					<button type="submit" class="login-btn login-btn-primary">Se connecter</button>
+					<a id="oauth42Link" class="oauth42-btn" href="#">Connect with 42</a>
+				</div>
 			</form>
 
 		<script type="module" src="./login.js"></script>

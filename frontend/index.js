@@ -133,6 +133,10 @@ function initViewSwitching() {
     const pongContainer = document.getElementById("pong-container");
     const gameReport = document.getElementById("game-report");
     const matchGame = document.getElementById("match-game");
+    const protectedViews = new Set(["profile", "friends", "chat"]);
+    function isAuthenticated() {
+        return Boolean(getAuthToken());
+    }
     function showGamesChoice() {
         if (gamesChoice)
             gamesChoice.hidden = false;
@@ -157,6 +161,10 @@ function initViewSwitching() {
         }
     }
     function setActiveView(target) {
+        if (protectedViews.has(target) && !isAuthenticated()) {
+            alert("Veuillez vous connecter pour accéder à cette section.");
+            target = "Login";
+        }
         views.forEach((view) => {
             view.hidden = view.id !== `view-${target}`;
         });

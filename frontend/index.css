@@ -312,3 +312,72 @@ main{
     padding: 4px 0;
     border-bottom: 1px solid #eee;
 }
+
+/* login */
+#view-Login #loginForm {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+}
+
+#view-Login #loginForm > div {
+    display: grid;
+    gap: 6px;
+}
+
+#view-Login #loginForm input {
+    min-width: 260px;
+}
+
+#view-Login .login-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: -8px;
+    align-items: center;
+    justify-content: center;
+}
+
+#view-Login .login-btn {
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 10px;
+    padding: 10px 16px;
+    min-width: 170px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+}
+
+#view-Login .login-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+
+#view-Login .login-btn-primary {
+    background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.22));
+    color: #000;
+}
+
+#view-Login .login-btn-secondary {
+    background: rgba(255,255,255,.12);
+    color: #000;
+}
+
+#view-Login .oauth42-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.35);
+    color: #000;
+    text-decoration: none;
+    background: rgba(255,255,255,.16);
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+}
+
+#view-Login .oauth42-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.24);
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
