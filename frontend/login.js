@@ -1,6 +1,18 @@
 const form = document.getElementById("loginForm");
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
+// Vérifier si on arrive du OAuth 42 callback
+const params = new URLSearchParams(window.location.search);
+const tokenFromUrl = params.get("token");
+const errorFromUrl = params.get("error");
+if (tokenFromUrl) {
+    localStorage.setItem("token", tokenFromUrl);
+    window.location.href = "./index.html";
+}
+else if (errorFromUrl) {
+    console.error("OAuth 42 error:", errorFromUrl);
+    alert("Authentification 42 échouée: " + errorFromUrl);
+}
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const response = await fetch("http://localhost:3000/users/login", {
