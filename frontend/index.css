@@ -80,12 +80,12 @@ main{
     height: calc(100vh - 96px);
     box-sizing: border-box;
     overflow: hidden;
-    background: rgba(255,255,255,.10);
-    border: 1px solid rgba(255,255,255,.18);
+    background: transparent;
+    border: none;
     border-radius: 18px;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    box-shadow: var(--shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
 }
 
 main::-webkit-scrollbar{
@@ -106,12 +106,40 @@ main{
     gap: 16px;
     min-height: calc(100vh - 160px);
     padding: 0;
+    transform: none;
 }
 
 .view > h2{
     margin: 0;
+    transform: none;
     text-align: center;
     text-shadow: 0 2px 12px rgba(0,0,0,.14);
+}
+
+#view-friends > h2,
+#view-chat > h2,
+#view-games > h2,
+#view-leaderboard > h2,
+#view-Login > h2{
+    transform: translateY(-18px);
+}
+
+#view-profile{
+    align-content: start;
+    padding-top: 18px;
+}
+
+#view-profile > h2{
+    transform: none;
+}
+
+#view-leaderboard{
+    align-content: start;
+    padding-top: 18px;
+}
+
+#view-leaderboard > h2{
+    transform: none;
 }
 
 .view > :not(h2){
