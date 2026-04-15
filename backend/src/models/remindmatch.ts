@@ -66,8 +66,8 @@ RemindMatch.init({
 });
 
 
-User.hasMany(RemindMatch, { foreignKey: 'player1ID', as: 'matches' });
-User.hasMany(RemindMatch, { foreignKey: 'player2ID', as: 'matches' });
+User.hasMany(RemindMatch, { foreignKey: 'player1ID', as: 'matchesAsPlayer1' });
+User.hasMany(RemindMatch, { foreignKey: 'player2ID', as: 'matchesAsPlayer2' });
 
 RemindMatch.belongsTo(User, { foreignKey: 'player1ID', as: 'player1' });
 RemindMatch.belongsTo(User, { foreignKey: 'player2ID', as: 'player2' });

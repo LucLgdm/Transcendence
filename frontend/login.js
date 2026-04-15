@@ -1,7 +1,6 @@
 const form = document.getElementById("loginForm");
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
-// Attention : Tout ce qui est en dehors de l'evenement s'execute tout de suite
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const response = await fetch("http://localhost:3000/users/login", {

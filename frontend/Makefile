@@ -18,7 +18,7 @@ all:
 	docker run -d --rm\
 		--name ts-dev-front \
 		-p 8080:3000 \
-		-v $(PWD)/frontend:/app \
+		-v $(PWD):/app \
 		ts-dev sh -c "\
 			tsc && \
 			serve . \

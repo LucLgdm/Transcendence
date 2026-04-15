@@ -1,95 +1,198 @@
-body {
-    display: flex;
-    min-height: 100vh;
+:root{
+    --glass: rgba(255,255,255,.14);
+    --glass-2: rgba(255,255,255,.10);
+    --stroke: rgba(255,255,255,.22);
+    --text: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.72);
+    --shadow: 0 18px 40px rgba(0,0,0,.18);
 }
 
-header {
-    position: relative;
-    width: 220px;
-    min-height: 100vh;
-    padding: 16px 12px;
-    box-sizing: border-box;
-    background: rgba(15, 15, 30, 0.8);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.6);
+html, body { height: 100%; }
+
+body{
+    margin: 0;
+    height: 100vh;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    background: linear-gradient(180deg, #7ec5df 0%, #8ccfe6 45%, #c8e4ef 100%);
 }
 
-header nav {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-header nav button {
-    width: 100%;
-    padding: 8px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.06);
-    color: #f5f5f5;
-    cursor: pointer;
-    text-align: left;
-    font-weight: 500;
-}
-
-header nav button:hover {
-    background: rgba(255, 255, 255, 0.16);
-}
-
-/* Contenu principal centré */
-main {
-    flex: 1;
+body.home main{
     max-width: 1100px;
-    margin: 40px auto;
-    padding: 24px 32px;
-    background: rgba(15, 15, 30, 0.55);
-    border-radius: 16px;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+    margin: 0 auto;
+    padding: 0;
+    height: calc(100vh - 96px);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
-
-.view {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+body.home #view-home{
+    min-height: 100vh;
+    display: grid;
+    place-content: center;
 }
 
-.nav-toggle {
-    position: absolute;
-    top: 12px;
-    right: -14px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(15, 15, 30, 0.9);
-    color: #f5f5f5;
-    cursor: pointer;
-    font-size: 16px;
+/* topbar */
+.topbar{
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px;
+}
+
+.brand{
+    font-weight: 650;
+    letter-spacing: .2px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.18);
+}
+
+.topnav{
+    display: flex;
+    gap: 12px;
+}
+
+.pill{
+    border: 1px solid var(--stroke);
+    background: rgba(255,255,255,.14);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.pill:hover{ background: rgba(255,255,255,.18); }
+
+main{
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    height: calc(100vh - 96px);
+    box-sizing: border-box;
+    overflow: hidden;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 18px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+}
+
+main::-webkit-scrollbar{
+    width: 0;
+    height: 0;
+}
+
+main{
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* "Pages" centrées */
+.view{
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 16px;
+    min-height: calc(100vh - 160px);
+    padding: 0;
+}
+
+.view > h2{
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 2px 12px rgba(0,0,0,.14);
+}
+
+.view > :not(h2){
+    width: min(900px, 100%);
+}
+
+#view-games > :not(h2){
+    width: min(1100px, 100%);
+}
+
+.view[hidden]{
+    display: none !important;
+}
+
+[hidden]{
+    display: none !important;
+}
+
+.center-hero{
+    min-height: 360px;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 10px;
+}
+
+.title{
+    margin: 0;
+    font-size: 28px;
+    font-weight: 650;
+    text-shadow: 0 2px 12px rgba(0,0,0,.14);
+}
+
+.subtitle{
+    margin: 0 0 18px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.cards{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 260px));
+    gap: 22px;
     justify-content: center;
 }
 
-body.sidebar-collapsed header {
-    width: 60px;
-    padding-right: 6px;
+.card{
+    border: 1px solid var(--stroke);
+    background: var(--glass);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 18px 18px 16px;
+    cursor: pointer;
+
+    display: grid;
+    place-items: center;
+    gap: 10px;
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
-body.sidebar-collapsed header nav {
-    transform: translateX(-100%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.25s ease, opacity 0.25s ease;
+.card:hover{
+    transform: translateY(-2px);
+    transition: transform .12s ease, background .12s ease;
+    background: rgba(255,255,255,.18);
 }
 
-header nav {
-    transition: transform 0.25s ease, opacity 0.25s ease;
+.card__icon{
+    font-size: 42px;
+    opacity: .95;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,.12));
 }
-* chess */
+
+.card__label{
+    font-size: 14px;
+    color: rgba(255,255,255,.86);
+    text-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+
+/* chess */
 .chess-color-selection {
     padding: 20px;
     text-align: center;
@@ -127,6 +230,14 @@ header nav {
 
 /* profile */
 .profile_container {
+    width: min(900px, 100%);
+    padding: 22px 24px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.10);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
     display: flex;
     gap: 24px;
     align-items: flex-start;

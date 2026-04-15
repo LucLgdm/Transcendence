@@ -150,16 +150,79 @@ async function fetchLeaderboard(game: string): Promise<LeaderbordRow[]> {
 function initViewSwitching(): void {
     const buttons = document.querySelectorAll<HTMLButtonElement>('nav button');
     const views = document.querySelectorAll<HTMLElement>('.view');
+    const gamesChoice = document.getElementById("games-choice");
+    const gamesContent = document.getElementById("games-content");
+    const chessContainer = document.getElementById("chess-container");
+    const pongContainer = document.getElementById("pong-container");
+    const gameReport = document.getElementById("game-report");
+    const matchGame = document.getElementById("match-game") as HTMLSelectElement | null;
+
+    function showGamesChoice(): void {
+        if (gamesChoice) gamesChoice.hidden = false;
+        if (gamesContent) gamesContent.hidden = true;
+    }
+
+    function showSelectedGame(game: "chess" | "pong"): void {
+        if (gamesChoice) gamesChoice.hidden = true;
+        if (gamesContent) gamesContent.hidden = false;
+
+        if (chessContainer) chessContainer.hidden = game !== "chess";
+        if (pongContainer) pongContainer.hidden = game !== "pong";
+        if (gameReport) gameReport.hidden = false;
+        if (matchGame) matchGame.value = game;
+
+        if (game === "chess") {
+            initChess();
+        }
+    }
+
+    function setActiveView(target: string): void {
+        views.forEach((view) => {
+            view.hidden = view.id !== `view-${target}`;
+        });
+
+        document.body.classList.toggle("home", target === "home");
+
+        buttons.forEach((b) => b.classList.remove("pill--active"));
+        const activeBtn = Array.from(buttons).find((b) => b.dataset.view === target);
+        if (activeBtn) activeBtn.classList.add("pill--active");
+
+        if (target === "profile") void initProfile();
+        if (target === "games") showGamesChoice();
+    }
 
     buttons.forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.view;
             if (target) {
-                views.forEach((view) => {
-                    view.hidden = view.id !== `view-${target}`;
-                });
+                setActiveView(target);
             }
         });
+    });
+    setActiveView("home");
+
+    const chessCard = document.getElementById("home-card-chess");
+    const pongCard = document.getElementById("home-card-pong");
+
+    chessCard?.addEventListener("click", () => {
+        setActiveView("games");
+        showSelectedGame("chess");
+    });
+
+    pongCard?.addEventListener("click", () => {
+        setActiveView("games");
+        showSelectedGame("pong");
+    });
+
+    const gamesChessCard = document.getElementById("games-card-chess");
+    const gamesPongCard = document.getElementById("games-card-pong");
+
+    gamesChessCard?.addEventListener("click", () => {
+        showSelectedGame("chess");
+    });
+
+    gamesPongCard?.addEventListener("click", () => {
+        showSelectedGame("pong");
     });
 }
 
@@ -415,7 +478,7 @@ async function initLeaderboard(): Promise<void> {
   
     leaderboardTable.innerHTML = rows
       .map((row) => {
-        const username = row.player1?.username ?? `User #${row.winnerID}`;
+        const username = row.player?.username ?? `User #${row.winnerId}`;
         return `
           <tr>
             <td>${username}</td>

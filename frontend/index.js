@@ -1,6 +1,21 @@
 function getAuthToken() {
     return localStorage.getItem("token");
 }
+async function fetchUserMatches(userId) {
+    const token = getAuthToken();
+    if (!token)
+        return [];
+    const res = await fetch(`http://localhost:3000/remindmatch/users/${userId}/matches`, {
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur fetch matches", res.status);
+        return [];
+    }
+    return res.json();
+}
 async function fetchFriends() {
     const token = getAuthToken();
     if (!token)
@@ -78,61 +93,181 @@ async function deleteFriend(friendId) {
         console.error("Erreur deleteFriend", res.status);
     }
 }
+async function podMatch(pload) {
+    const token = getAuthToken();
+    if (!token) {
+        alert("Veuillez vous connecter pour déclarer une partie");
+        return;
+    }
+    const res = await fetch("http://localhost:3000/remind-matches", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(pload),
+    });
+    if (!res.ok) {
+        alert("Erreur lors de la déclaration de la partie");
+        return;
+    }
+    else {
+        alert("Partie déclarée avec succès");
+    }
+}
+async function fetchLeaderboard(game) {
+    const res = await fetch(`http://localhost:3000/remindmatch/leaderboard?game=${encodeURIComponent(game)}`);
+    if (!res.ok) {
+        console.error("Erreur fetch leaderboard", res.status);
+        return [];
+    }
+    return res.json();
+}
 function initViewSwitching() {
     const buttons = document.querySelectorAll('nav button');
     const views = document.querySelectorAll('.view');
+    const gamesChoice = document.getElementById("games-choice");
+    const gamesContent = document.getElementById("games-content");
+    const chessContainer = document.getElementById("chess-container");
+    const pongContainer = document.getElementById("pong-container");
+    const gameReport = document.getElementById("game-report");
+    const matchGame = document.getElementById("match-game");
+    function showGamesChoice() {
+        if (gamesChoice)
+            gamesChoice.hidden = false;
+        if (gamesContent)
+            gamesContent.hidden = true;
+    }
+    function showSelectedGame(game) {
+        if (gamesChoice)
+            gamesChoice.hidden = true;
+        if (gamesContent)
+            gamesContent.hidden = false;
+        if (chessContainer)
+            chessContainer.hidden = game !== "chess";
+        if (pongContainer)
+            pongContainer.hidden = game !== "pong";
+        if (gameReport)
+            gameReport.hidden = false;
+        if (matchGame)
+            matchGame.value = game;
+        if (game === "chess") {
+            initChess();
+        }
+    }
+    function setActiveView(target) {
+        views.forEach((view) => {
+            view.hidden = view.id !== `view-${target}`;
+        });
+        document.body.classList.toggle("home", target === "home");
+        buttons.forEach((b) => b.classList.remove("pill--active"));
+        const activeBtn = Array.from(buttons).find((b) => b.dataset.view === target);
+        if (activeBtn)
+            activeBtn.classList.add("pill--active");
+        if (target === "profile")
+            void initProfile();
+        if (target === "games")
+            showGamesChoice();
+    }
     buttons.forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.view;
             if (target) {
-                views.forEach((view) => {
-                    view.hidden = view.id !== `view-${target}`;
-                });
+                setActiveView(target);
             }
         });
     });
+    setActiveView("home");
+    const chessCard = document.getElementById("home-card-chess");
+    const pongCard = document.getElementById("home-card-pong");
+    chessCard?.addEventListener("click", () => {
+        setActiveView("games");
+        showSelectedGame("chess");
+    });
+    pongCard?.addEventListener("click", () => {
+        setActiveView("games");
+        showSelectedGame("pong");
+    });
+    const gamesChessCard = document.getElementById("games-card-chess");
+    const gamesPongCard = document.getElementById("games-card-pong");
+    gamesChessCard?.addEventListener("click", () => {
+        showSelectedGame("chess");
+    });
+    gamesPongCard?.addEventListener("click", () => {
+        showSelectedGame("pong");
+    });
 }
-// fonction asynchrone pour récupérer les informations du profil
 async function initProfile() {
-    const profileInfo = document.getElementById('profile-info');
-    const avatarImg = document.getElementById('profile-avatar');
+    const profileInfo = document.getElementById("profile-info");
+    const avatarImg = document.getElementById("profile-avatar");
     if (!profileInfo)
         return;
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
         profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
         if (avatarImg) {
-            avatarImg.src = 'https://via.placeholder.com/150?text=Guest';
+            avatarImg.src = "https://via.placeholder.com/150?text=Guest";
         }
         return;
     }
     try {
-        const reponse = await fetch('http://localhost:3000/users/me', {
-            method: 'GET',
+        const reponse = await fetch("http://localhost:3000/users/me", {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${token}`,
             },
         });
         if (!reponse.ok) {
-            profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
+            profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
             return;
         }
         const user = await reponse.json();
+        const currentUserId = user.id;
         profileInfo.innerHTML = `
-            <p>Nom d'utilisateur: ${user.username}</p>
-            <p>Email: ${user.email}</p>
-            <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : 'N/A'}</p>
-        `;
+        <p>Nom d'utilisateur: ${user.username}</p>
+        <p>Email: ${user.email}</p>
+        <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : "N/A"}</p>
+      `;
         if (avatarImg) {
-            avatarImg.src = user.avatar && user.avatar.length > 0
-                ? user.avatar
-                : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || 'U')}`;
+            avatarImg.src =
+                user.avatar && user.avatar.length > 0
+                    ? user.avatar
+                    : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || "U")}`;
+        }
+        const matches = await fetchUserMatches(currentUserId);
+        const matchesList = document.getElementById("profile-matches");
+        if (matchesList) {
+            if (matches.length === 0) {
+                matchesList.innerHTML = "<li>Aucun match enregistré pour le moment</li>";
+            }
+            else {
+                matchesList.innerHTML = matches
+                    .map((m) => {
+                    const date = new Date(m.createdAt).toLocaleString();
+                    let result;
+                    if (m.winnerID === null) {
+                        result = "Match nul";
+                    }
+                    else if (m.winnerID === currentUserId) {
+                        result = "Victoire";
+                    }
+                    else {
+                        result = "Défaite";
+                    }
+                    const adversaireId = m.player1ID === currentUserId ? m.player2ID : m.player1ID;
+                    return `<li>
+                [${m.game}] ${result} vs joueur ${adversaireId}
+                (score: ${m.scoreP1 ?? "-"} - ${m.scoreP2 ?? "-"}) le ${date}
+              </li>`;
+                })
+                    .join("");
+            }
         }
     }
     catch (error) {
-        profileInfo.innerHTML = '<p>Erreur de récupération du profil</p>';
-        console.error('Erreur de récupération du profil:', error);
+        profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+        console.error("Erreur de récupération du profil:", error);
     }
 }
 async function initFriends() {
@@ -259,24 +394,60 @@ function initGames() {
     }
     initChess();
 }
-function initLeaderboard() {
-    const leaderboardTable = document.querySelector('#leaderboard-table tbody');
-    const scores = [
-        { player: 'Joueur1', score: 1500, game: 'Pong' },
-        { player: 'Joueur2', score: 1200, game: 'Chess' },
-        { player: 'Joueur3', score: 1000, game: 'Pong' }
-    ];
-    if (leaderboardTable) {
-        leaderboardTable.innerHTML = scores
-            .sort((a, b) => b.score - a.score)
-            .map(score => `
-                <tr>
-                    <td>${score.player}</td>
-                    <td>${score.score}</td>
-                    <td>${score.game}</td>
-                </tr>
-            `).join('');
+async function initLeaderboard() {
+    const leaderboardTable = document.querySelector("#leaderboard-table tbody");
+    if (!leaderboardTable)
+        return;
+    const rows = await fetchLeaderboard("chess");
+    if (rows.length === 0) {
+        leaderboardTable.innerHTML = `
+        <tr>
+          <td colspan="3">Aucun résultat pour le moment</td>
+        </tr>
+      `;
+        return;
     }
+    leaderboardTable.innerHTML = rows
+        .map((row) => {
+        const username = row.player?.username ?? `User #${row.winnerId}`;
+        return `
+          <tr>
+            <td>${username}</td>
+            <td>${row.wins}</td>
+            <td>${"chess"}</td>
+          </tr>
+        `;
+    })
+        .join("");
+}
+function initMatchForm() {
+    const form = document.getElementById('match-form');
+    if (!form)
+        return;
+    const gameSelected = document.getElementById('match-game');
+    const matchplayer1 = document.getElementById('match-p1');
+    const matchplayer2 = document.getElementById('match-p2');
+    const matchwinner = document.getElementById('match-winner');
+    const matchscore1 = document.getElementById('match-score1');
+    const matchscore2 = document.getElementById('match-score2');
+    if (!gameSelected || !matchplayer1 || !matchplayer2 || !matchwinner || !matchscore1 || !matchscore2)
+        return;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const game = gameSelected.value;
+        const player1 = Number(matchplayer1.value);
+        const player2 = Number(matchplayer2.value);
+        const winner = Number(matchwinner.value);
+        const score1 = Number(matchscore1.value);
+        const score2 = Number(matchscore2.value);
+        if (!player1 || !player2) {
+            alert("manque un joeur");
+            return;
+        }
+        const winnerId = winner === 0 ? null : winner;
+        await podMatch({ game, player1ID: player1, player2ID: player2, winnerID: winnerId, scoreP1: score1, scoreP2: score2 });
+    });
+    form.reset();
 }
 function main() {
     initViewSwitching();
@@ -286,6 +457,7 @@ function main() {
     initGames();
     initLeaderboard();
     initSidebarToggle();
+    initMatchForm();
 }
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', main);
