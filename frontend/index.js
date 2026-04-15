@@ -1,3 +1,4 @@
+import { buildApiUrl } from "./api.js";
 function getAuthToken() {
     return localStorage.getItem("token");
 }
@@ -5,7 +6,7 @@ async function fetchUserMatches(userId) {
     const token = getAuthToken();
     if (!token)
         return [];
-    const res = await fetch(`http://localhost:3000/remindmatch/users/${userId}/matches`, {
+    const res = await fetch(buildApiUrl(`/remind-matches/users/${userId}/matches`), {
         headers: {
             "Authorization": `Bearer ${token}`,
         },
@@ -20,7 +21,7 @@ async function fetchFriends() {
     const token = getAuthToken();
     if (!token)
         return [];
-    const res = await fetch("http://localhost:3000/friends", {
+    const res = await fetch(buildApiUrl("/friends"), {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -36,7 +37,7 @@ async function fetchChatMess(userId) {
     const token = getAuthToken();
     if (!token)
         return [];
-    const res = await fetch(`https://localhost:3000/messages/${userId}`, {
+    const res = await fetch(buildApiUrl(`/messages/${userId}`), {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
@@ -52,7 +53,7 @@ async function sendChatMessage(userId, content) {
     const token = getAuthToken();
     if (!token)
         return;
-    const res = await fetch(`https://localhost:3000/messages/${userId}`, {
+    const res = await fetch(buildApiUrl(`/messages/${userId}`), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -68,7 +69,7 @@ async function addFriendById(friendId) {
     const token = getAuthToken();
     if (!token)
         return;
-    const res = await fetch(`http://localhost:3000/friends/${friendId}`, {
+    const res = await fetch(buildApiUrl(`/friends/${friendId}`), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -83,7 +84,7 @@ async function deleteFriend(friendId) {
     const token = getAuthToken();
     if (!token)
         return;
-    const res = await fetch(`http://localhost:3000/friends/${friendId}`, {
+    const res = await fetch(buildApiUrl(`/friends/${friendId}`), {
         method: "DELETE",
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -99,7 +100,7 @@ async function podMatch(pload) {
         alert("Veuillez vous connecter pour déclarer une partie");
         return;
     }
-    const res = await fetch("http://localhost:3000/remind-matches", {
+    const res = await fetch(buildApiUrl("/remind-matches"), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -116,7 +117,7 @@ async function podMatch(pload) {
     }
 }
 async function fetchLeaderboard(game) {
-    const res = await fetch(`http://localhost:3000/remindmatch/leaderboard?game=${encodeURIComponent(game)}`);
+    const res = await fetch(buildApiUrl(`/remind-matches/leaderboard?game=${encodeURIComponent(game)}`));
     if (!res.ok) {
         console.error("Erreur fetch leaderboard", res.status);
         return [];
@@ -211,7 +212,7 @@ async function initProfile() {
         return;
     }
     try {
-        const reponse = await fetch("http://localhost:3000/users/me", {
+        const reponse = await fetch(buildApiUrl("/users/me"), {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 import { User, userMap } from "./user.js";
+import { buildApiUrl } from "./api.js";
 
 const registerForm = document.getElementById("registerForm") as HTMLFormElement;
 const newUserName = document.getElementById("userName") as HTMLInputElement;
@@ -8,7 +9,7 @@ const newPassword = document.getElementById("password") as HTMLInputElement;
 registerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const response = await fetch("http://localhost:3000/users/register", {
+    const response = await fetch(buildApiUrl("/users/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

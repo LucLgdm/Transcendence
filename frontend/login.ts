@@ -1,9 +1,15 @@
 import { User, userMap } from "./user.js";
+import { buildApiUrl } from "./api.js";
 
 
 const form = document.getElementById("loginForm") as HTMLFormElement;
 const usernameInput = document.getElementById("username") as HTMLInputElement;
 const passwordInput = document.getElementById("password") as HTMLInputElement;
+const oauth42Link = document.getElementById("oauth42Link") as HTMLAnchorElement | null;
+
+if (oauth42Link) {
+	oauth42Link.href = buildApiUrl("/users/auth/42");
+}
 
 // Vérifier si on arrive du OAuth 42 callback
 const params = new URLSearchParams(window.location.search);
@@ -20,7 +26,7 @@ if (tokenFromUrl) {
 form.addEventListener("submit", async (event) => {
 	event.preventDefault();
 
-	const response = await fetch("http://localhost:3000/users/login", {
+	const response = await fetch(buildApiUrl("/users/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

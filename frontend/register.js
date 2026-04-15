@@ -1,10 +1,11 @@
+import { buildApiUrl } from "./api.js";
 const registerForm = document.getElementById("registerForm");
 const newUserName = document.getElementById("userName");
 const newEmail = document.getElementById("email");
 const newPassword = document.getElementById("password");
 registerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const response = await fetch("http://localhost:3000/users/register", {
+    const response = await fetch(buildApiUrl("/users/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -21,4 +22,3 @@ registerForm.addEventListener("submit", async (event) => {
         console.error("Erreur:", error);
     }
 });
-export {};

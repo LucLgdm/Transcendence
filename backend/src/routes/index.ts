@@ -7,6 +7,14 @@ import axios from 'axios';
 
 const router = Router();
 
+const getFrontendBaseUrl = (hostName: string): string => {
+	const configured = process.env.FRONTEND_BASE_URL;
+	if (configured) {
+		return configured;
+	}
+	return `http://${hostName}:8080`;
+};
+
 router.post("/", async (req, res) => {
 try {
 	const user = await User.create(req.body);
@@ -84,9 +92,10 @@ router.get("/auth/42", (req, res) => {
 router.get("/auth/42/callback", async (req, res) => {
 	try {
 		const { code } = req.query;
+		const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
 
 		if (!code) {
-			return res.redirect("http://localhost:8080/?error=no_code");
+			return res.redirect(`${frontendBaseUrl}/?error=no_code`);
 		}
 
 		// 1. Échange le code contre un token d'accès
@@ -145,10 +154,11 @@ router.get("/auth/42/callback", async (req, res) => {
 		);
 
 		// 5. Redirige vers le frontend avec le token
-		res.redirect(`http://localhost:8080/index.html?token=${jwtToken}`);
+		res.redirect(`${frontendBaseUrl}/index.html?token=${jwtToken}`);
 	} catch (err) {
 		console.error("OAuth 42 error:", err);
-		res.redirect("http://localhost:8080/?error=auth_failed");
+		const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
+		res.redirect(`${frontendBaseUrl}/?error=auth_failed`);
 	}
 });
 
