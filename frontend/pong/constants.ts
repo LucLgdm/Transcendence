@@ -21,5 +21,10 @@ export const GAME_CONFIG = {
 		RADIUS: 0.4,			// Radius of the ball
 		SPAWN_Y: 0.4,			// Y-position at spawn
 		BASE_SPEED: 0.15		// Base speed of the ball
+	},
+	POWERUP: {
+		RADIUS: 0.6,			// Radius of the power-up
+		SPAWN_Y: 0.4,			// Y-position at spawn
+		DURATION_MS: 5000		// How long the power-up stays on screen before vanishing
 	}
 };

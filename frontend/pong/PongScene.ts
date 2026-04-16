@@ -24,7 +24,7 @@ export class PongScene {
 		this.renderer.setSize(w, h, false);
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 
-		// Scoreboard initialization via CanvasTexture
+		// Scoreboard initialization
 		this.scoreCanvas = document.createElement('canvas');
 		this.scoreCanvas.width = 512;
 		this.scoreCanvas.height = 256;

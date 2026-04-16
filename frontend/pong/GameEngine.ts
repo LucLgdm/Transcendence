@@ -1,11 +1,12 @@
 import { PongScene } from './PongScene.js';
 import { Paddle } from './Paddle.js';
 import { Ball } from './Ball.js';
+import * as THREE from 'three';
 import { GAME_CONFIG } from './constants.js';
 
 export interface GameSettings {
 	mode: 'pvp' | 'ai' | 'aix2';
-	themeColor: number; // Hex code for the map walls
+	themeColor: number;
 	ballSpeedMultiplier: number;
 	paddleSpeedMultiplier: number;
 	powerUpsEnabled: boolean;
@@ -13,49 +14,46 @@ export interface GameSettings {
 
 export const DEFAULT_SETTINGS: GameSettings = {
 	mode: 'pvp',
-	themeColor: 0x444444, // Default grey walls
+	themeColor: 0x444444,
 	ballSpeedMultiplier: 1.0,
 	paddleSpeedMultiplier: 1.0,
 	powerUpsEnabled: false
 };
 
-// GameEngine.ts (Updated portions)
 export class GameEngine {
 	private sceneSetup: PongScene;
-	private Lplayer: Paddle; // Left paddle
-	private Rplayer: Paddle; // Right paddle
-	private balls: Ball[] = []; // Array to handle power-up duplicates
+	private Lplayer: Paddle;
+	private Rplayer: Paddle;
+	private ball!: Ball;
 	private settings: GameSettings;
 	private keys: { [key: string]: boolean } = {};
 	private isResetting: boolean = false;
 	private score = { left: 0, right: 0 };
+	private powerUpMesh: THREE.Mesh | null = null;
+	private powerUpType: 'speed' | 'slow' = 'speed';
 
 	constructor(canvasId: string, settings: GameSettings = DEFAULT_SETTINGS) {
 		this.settings = settings;
 		const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
 		
-		// Pass theme to Scene
 		this.sceneSetup = new PongScene(canvas, settings.themeColor);
 		
-		// Instantiation of paddles
 		this.Lplayer = new Paddle(-GAME_CONFIG.PADDLE.POS_X,
 			GAME_CONFIG.PADDLE.POS_Y,
 			GAME_CONFIG.PADDLE.POS_Z, 
-			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier); // left paddle
+			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier);
 		this.Rplayer = new Paddle(GAME_CONFIG.PADDLE.POS_X,
 			GAME_CONFIG.PADDLE.POS_Y,
 			GAME_CONFIG.PADDLE.POS_Z,
-			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier); // right paddle
+			GAME_CONFIG.PADDLE.COLOR, settings.paddleSpeedMultiplier);
 		
 		this.sceneSetup.scene.add(this.Lplayer.mesh);
 		this.sceneSetup.scene.add(this.Rplayer.mesh);
 
-		// Spawn initial ball
 		this.spawnBall();
 
-		// Optional: Trigger power-up randomly if enabled
 		if (this.settings.powerUpsEnabled) {
-			setInterval(() => this.triggerPowerUp(), 10000); // Check every 10s
+			setInterval(() => this.triggerPowerUp(), 10000);
 		}
 
 		window.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
@@ -66,56 +64,78 @@ export class GameEngine {
 
 	private spawnBall() {
 		const newBall = new Ball(0, GAME_CONFIG.BALL.SPAWN_Y, 0, 0xfb2b2b, this.settings.ballSpeedMultiplier);
-		this.balls.push(newBall);
+		this.ball = newBall;
 		this.sceneSetup.scene.add(newBall.mesh);
 	}
-
+	
 	private triggerPowerUp() {
-		if (this.balls.length < 3) { // Limit max balls
-			console.log("Power-up! Multi-ball!");
-			this.spawnBall();
+			if (this.powerUpMesh || this.isResetting) return;
+
+			// 50/50 chance for Speed (Green) or Slow (Blue)
+			this.powerUpType = Math.random() > 0.5 ? 'speed' : 'slow';
+			const color = this.powerUpType === 'speed' ? 0x00ff00 : 0x00aaff;
+
+			const geometry = new THREE.SphereGeometry(GAME_CONFIG.POWERUP.RADIUS, 16, 16);
+			const material = new THREE.MeshStandardMaterial({ color: color });
+			this.powerUpMesh = new THREE.Mesh(geometry, material);
+
+			const randomZ = (Math.random() - 0.5) * (GAME_CONFIG.ARENA.LIMIT_Z * 0.8);
+			this.powerUpMesh.position.set(0, GAME_CONFIG.POWERUP.SPAWN_Y, randomZ);
+
+			this.sceneSetup.scene.add(this.powerUpMesh);
+
+			setTimeout(() => {
+				if (this.powerUpMesh) {
+					this.sceneSetup.scene.remove(this.powerUpMesh);
+					this.powerUpMesh = null;
+				}
+			}, GAME_CONFIG.POWERUP.DURATION_MS);
 		}
-	}
 
 	private checkCollisions() {
 		if (this.isResetting) return;
 
-	// Derived constants for hit detection
-	const PADDLE_HALF_DEPTH = GAME_CONFIG.PADDLE.DEPTH / 2;
-	const COLLISION_X = GAME_CONFIG.PADDLE.POS_X - (GAME_CONFIG.PADDLE.WIDTH / 2) - GAME_CONFIG.BALL.RADIUS;
-	const COLLISION_Z_RANGE = PADDLE_HALF_DEPTH + GAME_CONFIG.BALL.RADIUS;
+		const PADDLE_HALF_DEPTH = GAME_CONFIG.PADDLE.DEPTH / 2;
+		const COLLISION_X = GAME_CONFIG.PADDLE.POS_X - (GAME_CONFIG.PADDLE.WIDTH / 2) - GAME_CONFIG.BALL.RADIUS;
+		const COLLISION_Z_RANGE = PADDLE_HALF_DEPTH + GAME_CONFIG.BALL.RADIUS;
 
-	for (let i = 0; i < this.balls.length; i++) {
-		const ball = this.balls[i];
-		const ballPos = ball.mesh.position;
-		
-		// Define which paddle we are checking against based on ball position
+		const ballPos = this.ball.mesh.position;
+				
+		//collision power-up
+		if (this.powerUpMesh) {
+			const dx = ballPos.x - this.powerUpMesh.position.x;
+			const dz = ballPos.z - this.powerUpMesh.position.z;
+			const distance = Math.sqrt(dx * dx + dz * dz);
+
+			if (distance <= GAME_CONFIG.BALL.RADIUS + GAME_CONFIG.POWERUP.RADIUS) {
+				const multiplier = this.powerUpType === 'speed' ? 1.5 : 0.6;
+				this.ball.velocity.x *= multiplier;
+				this.ball.velocity.z *= multiplier;
+
+				this.sceneSetup.scene.remove(this.powerUpMesh);
+				this.powerUpMesh = null;
+			}
+		}
+
+		// Collision paddles
 		const isLeftZone = ballPos.x < 0;
 		const paddle = isLeftZone ? this.Lplayer : this.Rplayer;
 		const paddleZ = paddle.mesh.position.z;
 
-		// Check X-axis proximity
 		const isAtX = isLeftZone ? (ballPos.x <= -COLLISION_X) : (ballPos.x >= COLLISION_X);
 		const isPastX = isLeftZone ? (ballPos.x > -(GAME_CONFIG.PADDLE.POS_X + 1)) : (ballPos.x < (GAME_CONFIG.PADDLE.POS_X + 1));
 
 		if (isAtX && isPastX) {
-			// Calculate distance from paddle center (Impact Point)
 			const impact = ballPos.z - paddleZ;
 
 			if (Math.abs(impact) <= COLLISION_Z_RANGE) {
-				// 1. Directional Flip: Ensure ball moves away from the paddle
-				ball.velocity.x = (isLeftZone ? 1 : -1) * Math.abs(ball.velocity.x) * 1.05;
-
-				// 2. Trajectory Mapping: Map impact (-2.2 to 2.2) to Z velocity
-				// This replaces the "V" bounce with a skill-based angle
-				ball.velocity.z = impact * 0.15;
-
-				// 3. Position Correction: Prevent the ball from getting stuck
+				this.ball.velocity.x = (isLeftZone ? 1 : -1) * Math.abs(this.ball.velocity.x) * 1.05;
+				this.ball.velocity.z = impact * 0.15;
 				ballPos.x = isLeftZone ? -COLLISION_X : COLLISION_X;
 			}
 		}
-	
-		// Scoring Logic
+
+		// scoring logic
 		if (Math.abs(ballPos.x) > GAME_CONFIG.ARENA.SCORE_X) {
 			this.isResetting = true;
 			if (ballPos.x < 0) this.score.right++;
@@ -123,21 +143,24 @@ export class GameEngine {
 			
 			this.sceneSetup.updateScore(this.score.left, this.score.right);
 
+			// Clear powerup if someone scores
+			if (this.powerUpMesh) {
+				this.sceneSetup.scene.remove(this.powerUpMesh);
+				this.powerUpMesh = null;
+			}
+
 			setTimeout(() => {
-				this.balls.forEach(b => this.sceneSetup.scene.remove(b.mesh));
-				this.balls = [];
 				this.spawnBall();
 				this.isResetting = false;
 			}, 1000);
-			break; 
 		}
 	}
-}
+	
 	private gameLoop = () => {
 		requestAnimationFrame(this.gameLoop);
 
-		if (this.balls.length > 0) {
-			const targetBall = this.balls[0].mesh;
+		if (this.ball) {
+			const targetBall = this.ball.mesh;
 	
 			if (this.settings.mode === 'ai' || this.settings.mode === 'aix2') {
 				this.Rplayer.movementAI(targetBall);
@@ -152,9 +175,9 @@ export class GameEngine {
 				if (this.keys['s']) this.Lplayer.moveDown();
 			}
 		}
-
-		// Update all balls
-		this.balls.forEach(ball => ball.update());
+		
+		// Update ball
+		if (this.ball) this.ball.update();
 		this.checkCollisions();
 		this.sceneSetup.renderer.render(this.sceneSetup.scene, this.sceneSetup.camera);
 	}
@@ -169,7 +192,7 @@ export function initPong(): void {
 	if (!startBtn || !menuDiv) return;
 
 	startBtn.addEventListener('click', () => {
-		// 1. Gather settings from DOM
+		//Gather settings from DOM
 		const mode = (document.getElementById('config-mode') as HTMLSelectElement).value as 'pvp' | 'ai' | 'aix2';
 		const themeColor = parseInt((document.getElementById('config-theme') as HTMLSelectElement).value);
 		const speed = parseFloat((document.getElementById('config-speed') as HTMLSelectElement).value);
@@ -183,10 +206,8 @@ export function initPong(): void {
 			powerUpsEnabled: powerups
 		};
 
-		// 2. Hide the menu
 		menuDiv.style.display = 'none';
 
-		// 3. Start the game with custom settings
 		if (!pongInstance) {
 			pongInstance = new GameEngine('pong-canvas', customSettings);
 		}
