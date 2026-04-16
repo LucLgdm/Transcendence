@@ -39,5 +39,13 @@ export const GAME_CONFIG = {
 		PADDLE_SPEED_INC: 1.05,		// Multiplier for the speed of the paddle
 		IMPACT_FACTOR: 0.15,		// Multiplier for the impact of the ball on the paddle
 		SCORE_DELAY_MS: 1000,		// Delay before scoring
+	},
+	AI: {
+		REACTION_FRAMES: {
+			EASY: 120,				// Waits ~0.75 seconds
+			NORMAL: 60,				// Waits ~0.4 seconds
+			HARD: 30,				// Waits ~0.15 seconds
+			WALL: 0					// Instant prediction
+		}
 	}
 };

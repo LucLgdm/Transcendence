@@ -10,6 +10,7 @@ export interface GameSettings {
 	ballSpeedMultiplier: number;
 	paddleSpeedMultiplier: number;
 	powerUpsEnabled: boolean;
+	aiDifficulty: 'easy' | 'normal' | 'hard' | 'wall';
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -17,7 +18,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
 	themeColor: 0x444444,
 	ballSpeedMultiplier: 1.0,
 	paddleSpeedMultiplier: 1.0,
-	powerUpsEnabled: false
+	powerUpsEnabled: false,
+	aiDifficulty: 'normal'
 };
 
 export class GameEngine {
@@ -165,13 +167,13 @@ export class GameEngine {
 			const targetBall = this.ball.mesh;
 	
 			if (this.settings.mode === 'ai' || this.settings.mode === 'aix2') {
-				this.Rplayer.movementAI(targetBall);
+				this.Rplayer.movementAI(this.ball, this.settings.aiDifficulty);
 			} else {
 				if (this.keys['o'] || this.keys['arrowup']) this.Rplayer.moveUp();
 				if (this.keys['l'] || this.keys['arrowdown']) this.Rplayer.moveDown();
 			}
 			if (this.settings.mode === 'aix2') {
-				this.Lplayer.movementAI(targetBall);
+				this.Lplayer.movementAI(this.ball, this.settings.aiDifficulty);
 			} else {
 				if (this.keys['w']) this.Lplayer.moveUp();
 				if (this.keys['s']) this.Lplayer.moveDown();
@@ -199,13 +201,15 @@ export function initPong(): void {
 		const themeColor = parseInt((document.getElementById('config-theme') as HTMLSelectElement).value);
 		const speed = parseFloat((document.getElementById('config-speed') as HTMLSelectElement).value);
 		const powerups = (document.getElementById('config-powerups') as HTMLInputElement).checked;
+		const aiDifficulty = (document.getElementById('config-ai-difficulty') as HTMLSelectElement).value as 'easy' | 'normal' | 'hard' | 'wall';
 
 		const customSettings: GameSettings = {
 			mode: mode,
 			themeColor: themeColor,
 			ballSpeedMultiplier: speed,
 			paddleSpeedMultiplier: speed,
-			powerUpsEnabled: powerups
+			powerUpsEnabled: powerups,
+			aiDifficulty: aiDifficulty
 		};
 
 		menuDiv.style.display = 'none';
