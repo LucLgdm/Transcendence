@@ -4,6 +4,60 @@ import { buildApiUrl } from "./api.js";
 function getAuthToken(): string | null {
     return localStorage.getItem("token");
 }
+
+const DEFAULT_PROFILE_AVATAR = "./image/image.png";
+let currentProfileUserId: number | null = null;
+let profileAvatarPickerBound = false;
+
+function getStoredProfileAvatar(userId: number): string | null {
+    return localStorage.getItem(`profile-avatar-${userId}`);
+}
+
+function setStoredProfileAvatar(userId: number, avatarDataUrl: string): void {
+    localStorage.setItem(`profile-avatar-${userId}`, avatarDataUrl);
+}
+
+function initProfileAvatarPicker(): void {
+    if (profileAvatarPickerBound) return;
+
+    const avatarImg = document.getElementById("profile-avatar") as HTMLImageElement | null;
+    const avatarInput = document.getElementById("profile-avatar-input") as HTMLInputElement | null;
+    if (!avatarImg || !avatarInput) return;
+
+    avatarImg.addEventListener("click", () => {
+        if (!getAuthToken()) {
+            alert("Connectez-vous pour changer votre photo de profil.");
+            return;
+        }
+        avatarInput.click();
+    });
+
+    avatarInput.addEventListener("change", () => {
+        const file = avatarInput.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Veuillez sélectionner un fichier image.");
+            avatarInput.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const imageDataUrl = typeof reader.result === "string" ? reader.result : null;
+            if (!imageDataUrl) return;
+
+            avatarImg.src = imageDataUrl;
+            if (currentProfileUserId !== null) {
+                setStoredProfileAvatar(currentProfileUserId, imageDataUrl);
+            }
+        };
+        reader.readAsDataURL(file);
+        avatarInput.value = "";
+    });
+
+    profileAvatarPickerBound = true;
+}
   
 async function fetchUserMatches(userId: number): Promise<Match[]> {
     const token = getAuthToken();
@@ -245,9 +299,10 @@ async function initProfile(): Promise<void> {
   
     const token = localStorage.getItem("token");
     if (!token) {
+      currentProfileUserId = null;
       profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
       if (avatarImg) {
-        avatarImg.src = "https://via.placeholder.com/150?text=Guest";
+        avatarImg.src = DEFAULT_PROFILE_AVATAR;
       }
       return;
     }
@@ -272,8 +327,10 @@ async function initProfile(): Promise<void> {
         email: string;
         createdAT?: string;
         avatar?: string;
+        profile_picture?: string;
       };
       const currentUserId = user.id;
+      currentProfileUserId = currentUserId;
   
       profileInfo.innerHTML = `
         <p>Nom d'utilisateur: ${user.username}</p>
@@ -284,10 +341,15 @@ async function initProfile(): Promise<void> {
       `;
   
       if (avatarImg) {
+        const customAvatar = getStoredProfileAvatar(currentUserId);
         avatarImg.src =
-          user.avatar && user.avatar.length > 0
+          (customAvatar && customAvatar.length > 0)
+            ? customAvatar
+            : user.profile_picture && user.profile_picture.length > 0
+              ? user.profile_picture
+              : user.avatar && user.avatar.length > 0
             ? user.avatar
-            : `https://via.placeholder.com/150?text=${encodeURIComponent(user.username[0] || "U")}`;
+            : DEFAULT_PROFILE_AVATAR;
       }
   
       const matches = await fetchUserMatches(currentUserId);
@@ -323,6 +385,9 @@ async function initProfile(): Promise<void> {
       }
     } catch (error) {
       profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+      if (avatarImg) {
+        avatarImg.src = DEFAULT_PROFILE_AVATAR;
+      }
       console.error("Erreur de récupération du profil:", error);
     }
 }
@@ -539,6 +604,7 @@ function initMatchForm(): void {
 }
 
 function main(): void {
+    initProfileAvatarPicker();
     initViewSwitching();
     initProfile();
     initFriends();

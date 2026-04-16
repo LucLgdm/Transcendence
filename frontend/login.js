@@ -20,22 +20,29 @@ else if (errorFromUrl) {
 }
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const response = await fetch(buildApiUrl("/users/login"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            username: usernameInput.value,
-            password: passwordInput.value
-        })
-    });
-    if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("token", data.token);
-        window.location.href = "./index.html";
-        console.log("Login successful:", data);
+    try {
+        const response = await fetch(buildApiUrl("/users/login"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: usernameInput.value,
+                password: passwordInput.value
+            })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("token", data.token);
+            alert("Connexion réussie.");
+            window.location.replace("./index.html");
+            return;
+        }
+        const error = await response.json().catch(() => ({ error: "Identifiants incorrects" }));
+        alert(error.error || "Connexion impossible.");
+        console.log("Login failed:", error);
     }
-    else {
-        console.log("Login failed");
+    catch (error) {
+        console.error("Erreur réseau:", error);
+        alert("Erreur réseau, impossible de se connecter.");
     }
 });
 const createAccountBtn = document.getElementById("createAccountBtn");

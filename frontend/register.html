@@ -4,45 +4,58 @@
 	<meta charset="UTF-8">
 	<title>Créer un compte</title>
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="index.css">
 </head>
-<body>
-	<h1>Créer un compte</h1>
+<body class="register-page">
+	<header class="topbar">
+		<div class="brand">• Transcendance</div>
+		<nav class="topnav">
+			<a class="pill register-link-pill" href="./index.html">Retour au site</a>
+		</nav>
+	</header>
 
-	<form id="registerForm">
-		<div>
-			<label for="newEmail">Adresse e-mail :</label><br>
-			<input
-				id="email"
-				type="email"
-				name="email"
-				required>
-		</div>
+	<main class="register-main">
+		<section class="register-card">
+			<div class="register-header">
+				<h1>Créer un compte</h1>
+				<p>Rejoins la plateforme avec la même ambiance visuelle que le reste du site.</p>
+			</div>
 
+			<form id="registerForm" class="register-form">
+				<div>
+					<label for="email">Adresse e-mail</label>
+					<input
+						id="email"
+						type="email"
+						name="email"
+						required>
+				</div>
 
-		<div>
-			<label for="newUsername">Identifiant :</label><br>
-			<input
-				id="userName"
-				type="text"
-				name="username"
-				required>
-		</div>
+				<div>
+					<label for="userName">Identifiant</label>
+					<input
+						id="userName"
+						type="text"
+						name="username"
+						required>
+				</div>
 
-		<br>
+				<div>
+					<label for="password">Mot de passe</label>
+					<input
+						id="password"
+						type="password"
+						name="password"
+						required>
+				</div>
 
-		<div>
-			<label for="newPassword">Mot de passe :</label><br>
-			<input
-				id="password"
-				type="password"
-				name="password"
-				required>
-		</div>
-
-		<br>
-
-		<button type="submit">Créer le compte</button>
-	</form>
+				<div class="register-actions">
+					<button type="submit" class="register-btn register-btn-primary">Créer le compte</button>
+					<a class="register-btn register-btn-secondary" href="./index.html">J'ai déjà un compte</a>
+				</div>
+			</form>
+		</section>
+	</main>
 
 	<script type="module" src="./register.js"></script>
 </body>
