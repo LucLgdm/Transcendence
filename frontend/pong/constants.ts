@@ -18,6 +18,7 @@ export const GAME_CONFIG = {
 		LIMIT_Z: 5,					// Maximum movement range up/down
 		COLOR: 0x312bfb,			// Color of the paddle
 		BASE_SPEED: 0.1,			// Base speed of the paddle
+		AI_DEADZONE: 0.1,			// Deadzone for AI paddle movement
 	},
 	BALL: {
 		RADIUS: 0.4,				// Radius of the ball

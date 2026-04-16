@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GAME_CONFIG } from './constants.js';
 
 export class PongScene {
 	public scene: THREE.Scene;
@@ -50,7 +51,7 @@ export class PongScene {
 		this.scene.add(pointLight);
 		
 		// Arena Floor
-		const tableGeo = new THREE.PlaneGeometry(30, 14);
+		const tableGeo = new THREE.PlaneGeometry(GAME_CONFIG.ARENA.WIDTH, GAME_CONFIG.ARENA.DEPTH);
 		const tableMat = new THREE.MeshStandardMaterial({ 
 			color: 0x000000, 
 			side: THREE.DoubleSide 
@@ -61,19 +62,20 @@ export class PongScene {
 		this.scene.add(table);
 		
 		// Arena Boundaries
-		const wallGeo = new THREE.BoxGeometry(30, 1, 0.5);
+		const wallGeo = new THREE.BoxGeometry(GAME_CONFIG.ARENA.WIDTH, 1, GAME_CONFIG.ARENA.WALL_THICKNESS);
+		const wallZPos = GAME_CONFIG.ARENA.LIMIT_Z + (GAME_CONFIG.ARENA.WALL_THICKNESS / 2);
 		const wallMat = new THREE.MeshStandardMaterial({ color: themeColor });
 		
 		const topWall = new THREE.Mesh(wallGeo, wallMat);
-		topWall.position.set(0, 0.5, -7.25);
+		topWall.position.set(0, 0.5, -wallZPos);
 		this.scene.add(topWall);
 		
 		const bottomWall = new THREE.Mesh(wallGeo, wallMat);
-		bottomWall.position.set(0, 0.5, 7.25);
+		bottomWall.position.set(0, 0.5, wallZPos);
 		this.scene.add(bottomWall);
 		
 		// Visual court divider
-		const lineGeo = new THREE.PlaneGeometry(0.2, 14);
+		const lineGeo = new THREE.PlaneGeometry(0.2, GAME_CONFIG.ARENA.DEPTH);
 		const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
 		const line = new THREE.Mesh(lineGeo, lineMat);
 		line.rotation.x = -Math.PI / 2;

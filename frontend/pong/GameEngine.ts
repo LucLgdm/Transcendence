@@ -53,7 +53,7 @@ export class GameEngine {
 		this.spawnBall();
 
 		if (this.settings.powerUpsEnabled) {
-			setInterval(() => this.triggerPowerUp(), 10000);
+			setInterval(() => this.triggerPowerUp(), GAME_CONFIG.POWERUP.SPAWN_INTERVAL_MS);
 		}
 
 		window.addEventListener('keydown', (e) => this.keys[e.key.toLowerCase()] = true);
@@ -108,7 +108,7 @@ export class GameEngine {
 			const distance = Math.sqrt(dx * dx + dz * dz);
 
 			if (distance <= GAME_CONFIG.BALL.RADIUS + GAME_CONFIG.POWERUP.RADIUS) {
-				const multiplier = this.powerUpType === 'speed' ? 1.5 : 0.6;
+				const multiplier = this.powerUpType === 'speed' ? GAME_CONFIG.POWERUP.SPEED_MULTIPLIER : GAME_CONFIG.POWERUP.SLOW_MULTIPLIER;
 				this.ball.velocity.x *= multiplier;
 				this.ball.velocity.z *= multiplier;
 
@@ -123,14 +123,16 @@ export class GameEngine {
 		const paddleZ = paddle.mesh.position.z;
 
 		const isAtX = isLeftZone ? (ballPos.x <= -COLLISION_X) : (ballPos.x >= COLLISION_X);
-		const isPastX = isLeftZone ? (ballPos.x > -(GAME_CONFIG.PADDLE.POS_X + 1)) : (ballPos.x < (GAME_CONFIG.PADDLE.POS_X + 1));
-
+		const isPastX = isLeftZone 
+			? (ballPos.x > -(GAME_CONFIG.PADDLE.POS_X + GAME_CONFIG.PADDLE.WIDTH)) 
+			: (ballPos.x < (GAME_CONFIG.PADDLE.POS_X + GAME_CONFIG.PADDLE.WIDTH));
+	
 		if (isAtX && isPastX) {
 			const impact = ballPos.z - paddleZ;
 
 			if (Math.abs(impact) <= COLLISION_Z_RANGE) {
-				this.ball.velocity.x = (isLeftZone ? 1 : -1) * Math.abs(this.ball.velocity.x) * 1.05;
-				this.ball.velocity.z = impact * 0.15;
+				this.ball.velocity.x = (isLeftZone ? 1 : -1) * Math.abs(this.ball.velocity.x) * GAME_CONFIG.PHYSICS.PADDLE_SPEED_INC;
+				this.ball.velocity.z = impact * GAME_CONFIG.PHYSICS.IMPACT_FACTOR;
 				ballPos.x = isLeftZone ? -COLLISION_X : COLLISION_X;
 			}
 		}
@@ -152,7 +154,7 @@ export class GameEngine {
 			setTimeout(() => {
 				this.spawnBall();
 				this.isResetting = false;
-			}, 1000);
+			}, GAME_CONFIG.PHYSICS.SCORE_DELAY_MS);
 		}
 	}
 	
