@@ -2,6 +2,24 @@ import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
 import { buildApiUrl } from "./api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 
+type UserSummary = {
+    id: number;
+    username: string;
+    email: string;
+    elo?: number;
+};
+
+type XpLeaderboardEntry = {
+    user: UserSummary;
+    xp: number;
+};
+
+type UserLeaderboardStats = {
+    user: UserSummary;
+    wins: number;
+    xp: number;
+};
+
 function getAuthToken(): string | null {
     return localStorage.getItem("token");
 }
@@ -9,6 +27,8 @@ function getAuthToken(): string | null {
 const DEFAULT_PROFILE_AVATAR = "./image/image.png";
 let currentProfileUserId: number | null = null;
 let profileAvatarPickerBound = false;
+let selectedXpUser: UserSummary | null = null;
+let pendingChatTargetUserId: number | null = null;
 
 function refreshTranslations(): void {
     applyTranslations();
@@ -20,6 +40,64 @@ function getStoredProfileAvatar(userId: number): string | null {
 
 function setStoredProfileAvatar(userId: number, avatarDataUrl: string): void {
     localStorage.setItem(`profile-avatar-${userId}`, avatarDataUrl);
+}
+
+function getStoredLocalChessXp(userId: number): number {
+    const rawValue = localStorage.getItem(`chess-local-xp-${userId}`);
+    const value = rawValue ? Number(rawValue) : 0;
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function getCurrentUserIdFromToken(): number | null {
+    const token = getAuthToken();
+    if (!token) return null;
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    try {
+        const parsed = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { id?: number | string };
+        const id = Number(parsed.id);
+        return Number.isFinite(id) && id > 0 ? id : null;
+    } catch {
+        return null;
+    }
+}
+
+function computeXpFromChessMatches(matches: Match[], currentUserId: number): number {
+    return matches
+        .filter((match) => match.game.toLowerCase() === "chess")
+        .reduce((totalXp, match) => {
+            const noOnlineOpponent = !match.player2ID || match.player2ID <= 0 || match.player2ID === currentUserId;
+            if (noOnlineOpponent) {
+                return totalXp + 25;
+            }
+            const isWinner = match.winnerID === currentUserId;
+            return totalXp + (isWinner ? 30 : 25);
+        }, 0);
+}
+
+function getXpProgress(totalXp: number): { level: number; xpInLevel: number; xpRequired: number; percent: number } {
+    let level = 1;
+    let xpRequired = 100;
+    let xpInLevel = totalXp;
+
+    while (xpInLevel >= xpRequired) {
+        xpInLevel -= xpRequired;
+        level += 1;
+        xpRequired *= 2;
+    }
+
+    const percent = xpRequired > 0 ? Math.min(100, (xpInLevel / xpRequired) * 100) : 0;
+    return { level, xpInLevel, xpRequired, percent };
+}
+
+function renderProfileXp(totalXp: number): void {
+    const xpMeta = document.getElementById("profile-xp-meta");
+    const xpFill = document.getElementById("profile-xp-fill") as HTMLDivElement | null;
+    if (!xpMeta || !xpFill) return;
+
+    const progress = getXpProgress(totalXp);
+    xpMeta.textContent = `Niveau ${progress.level} - ${progress.xpInLevel} / ${progress.xpRequired} XP`;
+    xpFill.style.width = `${progress.percent}%`;
 }
 
 function initProfileAvatarPicker(): void {
@@ -119,9 +197,9 @@ async function fetchChatMess(userId: number): Promise<ChatMessage[]> {
     return res.json();
 }
 
-async function sendChatMessage(userId: number, content: string): Promise<void> {
+async function sendChatMessage(userId: number, content: string): Promise<boolean> {
     const token  = getAuthToken();
-    if (!token) return;
+    if (!token) return false;
 
     const res = await fetch(buildApiUrl(`/messages/${userId}`), {
         method: "POST",
@@ -133,12 +211,14 @@ async function sendChatMessage(userId: number, content: string): Promise<void> {
     });
     if (!res.ok) {
         console.error("Erreur sendChatMessage", res.status);
+        return false;
     }
+    return true;
 }
 
-async function addFriendById(friendId: number): Promise<void> {
+async function addFriendById(friendId: number): Promise<boolean> {
   const token = getAuthToken();
-  if (!token) return;
+  if (!token) return false;
 
   const res = await fetch(buildApiUrl(`/friends/${friendId}`), {
     method: "POST",
@@ -150,7 +230,9 @@ async function addFriendById(friendId: number): Promise<void> {
 
   if (!res.ok) {
     console.error("Erreur addFriend", res.status);
+    return false;
   }
+  return true;
 }
 
 async function deleteFriend(friendId: number): Promise<void> {
@@ -205,6 +287,127 @@ async function fetchLeaderboard(game: string): Promise<LeaderbordRow[]> {
     return [];
   }
   return res.json();
+}
+
+async function fetchUsers(): Promise<UserSummary[]> {
+    const res = await fetch(buildApiUrl("/users"));
+    if (!res.ok) {
+        console.error("Erreur fetch users", res.status);
+        return [];
+    }
+    return res.json();
+}
+
+async function fetchUserLeaderboardStats(): Promise<UserLeaderboardStats[]> {
+    const users = await fetchUsers();
+    if (users.length === 0) return [];
+
+    const stats = await Promise.all(users.map(async (user) => {
+        const matches = await fetchUserMatches(user.id);
+        const wins = matches.filter((match) => match.game.toLowerCase() === "chess" && match.winnerID === user.id).length;
+        const remoteXp = computeXpFromChessMatches(matches, user.id);
+        const localXp = getStoredLocalChessXp(user.id);
+        return {
+            user,
+            wins,
+            xp: remoteXp + localXp,
+        } satisfies UserLeaderboardStats;
+    }));
+
+    return stats;
+}
+
+function renderXpProfileActions(user: UserSummary): void {
+    selectedXpUser = user;
+    const actions = document.getElementById("xp-profile-actions");
+    const selectedUser = document.getElementById("xp-selected-user");
+    if (!actions || !selectedUser) return;
+
+    selectedUser.textContent = `${t("xp-selected-player")}: ${user.username} (#${user.id})`;
+    actions.hidden = false;
+}
+
+function openChatWithUser(userId: number): void {
+    pendingChatTargetUserId = userId;
+    const chatNavButton = document.querySelector<HTMLButtonElement>('nav button[data-view="chat"]');
+    chatNavButton?.click();
+    window.dispatchEvent(new CustomEvent("chat-open-user", { detail: { userId } }));
+}
+
+function bindXpProfileActionButtons(): void {
+    const addFriendBtn = document.getElementById("xp-add-friend-btn") as HTMLButtonElement | null;
+    const sendMessageBtn = document.getElementById("xp-send-message-btn") as HTMLButtonElement | null;
+    if (!addFriendBtn || !sendMessageBtn) return;
+
+    addFriendBtn.onclick = async () => {
+        if (!selectedXpUser) return;
+        const added = await addFriendById(selectedXpUser.id);
+        if (!added) return;
+        await initFriends();
+        await initProfile();
+        alert(`${selectedXpUser.username} ${t("friend-added-success")}`);
+    };
+
+    sendMessageBtn.onclick = async () => {
+        if (!selectedXpUser) return;
+        const content = window.prompt(`${t("message-prompt")} ${selectedXpUser.username}`);
+        if (!content || !content.trim()) return;
+        const sent = await sendChatMessage(selectedXpUser.id, content.trim());
+        if (!sent) return;
+        openChatWithUser(selectedXpUser.id);
+        alert(t("message-sent-success"));
+    };
+}
+
+async function renderXpLeaderboard(statsByUser?: UserLeaderboardStats[]): Promise<void> {
+    const xpTableBody = document.querySelector("#xp-leaderboard-table tbody");
+    const topProfile = document.getElementById("xp-top-profile");
+    const topProfileBtn = document.getElementById("xp-top-profile-btn") as HTMLButtonElement | null;
+    const xpActions = document.getElementById("xp-profile-actions");
+    if (!xpTableBody || !topProfile || !topProfileBtn || !xpActions) return;
+
+    selectedXpUser = null;
+    xpActions.hidden = true;
+    topProfile.hidden = true;
+
+    const stats = statsByUser ?? await fetchUserLeaderboardStats();
+    if (stats.length === 0) {
+        xpTableBody.innerHTML = `<tr><td colspan="2">${t("leaderboard-empty")}</td></tr>`;
+        return;
+    }
+
+    const ranking: XpLeaderboardEntry[] = stats
+        .map((entry) => ({ user: entry.user, xp: entry.xp }))
+        .sort((a, b) => b.xp - a.xp)
+        .slice(0, 20);
+
+    if (ranking.length === 0) {
+        xpTableBody.innerHTML = `<tr><td colspan="2">${t("leaderboard-empty")}</td></tr>`;
+        return;
+    }
+
+    const topUser = ranking[0].user;
+    topProfile.hidden = false;
+    topProfileBtn.textContent = `${topUser.username} (#${topUser.id})`;
+    topProfileBtn.onclick = () => renderXpProfileActions(topUser);
+
+    xpTableBody.innerHTML = ranking
+        .map((entry) => `
+            <tr>
+                <td><button type="button" class="xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+                <td>${entry.xp}</td>
+            </tr>
+        `)
+        .join("");
+
+    const userMap = new Map<number, UserSummary>(ranking.map((entry) => [entry.user.id, entry.user]));
+    xpTableBody.querySelectorAll<HTMLButtonElement>(".xp-row-profile").forEach((button) => {
+        button.addEventListener("click", () => {
+            const id = Number(button.dataset.userId);
+            const user = userMap.get(id);
+            if (user) renderXpProfileActions(user);
+        });
+    });
 }
 
 function initViewSwitching(): void {
@@ -306,6 +509,7 @@ async function initProfile(): Promise<void> {
     if (!token) {
       currentProfileUserId = null;
       profileInfo.innerHTML = `<p>${t("profile-login-required")}</p>`;
+      renderProfileXp(0);
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;
       }
@@ -330,6 +534,7 @@ async function initProfile(): Promise<void> {
         id: number;
         username: string;
         email: string;
+        elo?: number;
         createdAt?: string;
         createdAT?: string;
         avatar?: string;
@@ -342,6 +547,7 @@ async function initProfile(): Promise<void> {
       profileInfo.innerHTML = `
         <p>${t("profile-username")}: ${user.username}</p>
         <p>${t("profile-email")}: ${user.email}</p>
+        <p>${t("score")}: ${user.elo ?? 500}</p>
         <p>${t("profile-created-at")}: ${
           creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"
         }</p>
@@ -370,7 +576,13 @@ async function initProfile(): Promise<void> {
       }
   
       const matches = await fetchUserMatches(currentUserId);
+      const profileFriends = await fetchFriends();
+      const users = await fetchUsers();
+      const usernamesById = new Map<number, string>(users.map((entry) => [entry.id, entry.username]));
       const matchesList = document.getElementById("profile-matches");
+      const totalXp = computeXpFromChessMatches(matches, currentUserId) + getStoredLocalChessXp(currentUserId);
+      renderProfileXp(totalXp);
+      renderProfileFriends(profileFriends);
   
       if (matchesList) {
         if (matches.length === 0) {
@@ -391,10 +603,13 @@ async function initProfile(): Promise<void> {
   
               const adversaireId =
                 m.player1ID === currentUserId ? m.player2ID : m.player1ID;
+              const adversaireName = usernamesById.get(adversaireId) ?? `#${adversaireId}`;
+              const eloDelta = m.winnerID === null ? 0 : (m.winnerID === currentUserId ? 10 : -10);
+              const formattedEloDelta = eloDelta > 0 ? `+${eloDelta}` : String(eloDelta);
   
               return `<li>
-                [${m.game}] ${result} ${t("profile-match-vs-player")} ${adversaireId}
-                (${t("score")}: ${m.scoreP1 ?? "-"} - ${m.scoreP2 ?? "-"}) ${t("profile-match-on")} ${date}
+                [${m.game}] ${result} ${t("profile-match-vs-player")} ${adversaireName}
+                (${t("score")}: ${formattedEloDelta}) ${t("profile-match-on")} ${date}
               </li>`;
             })
             .join("");
@@ -402,6 +617,7 @@ async function initProfile(): Promise<void> {
       }
     } catch (error) {
       profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+      renderProfileXp(0);
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;
       }
@@ -433,6 +649,7 @@ async function initFriends(): Promise<void> {
                 await deleteFriend(id);
                 friends = friends.filter((fr) => fr.id !== id);
                 renderFriends();
+                renderProfileFriends(friends);
             });
         });
     }
@@ -441,7 +658,7 @@ async function initFriends(): Promise<void> {
     renderFriends();
 
     if (addFriendForm && addFriendInput) {
-        addFriendForm.addEventListener('submit', async (event) => {
+        addFriendForm.onsubmit = async (event) => {
             event.preventDefault();
             const value = addFriendInput.value.trim();
             if (!value) return;
@@ -452,11 +669,13 @@ async function initFriends(): Promise<void> {
                 return;
             }
 
-            await addFriendById(friendId);
+            const added = await addFriendById(friendId);
+            if (!added) return;
             friends = await fetchFriends();
             renderFriends();
+            renderProfileFriends(friends);
             addFriendInput.value = "";
-        });
+        };
     }
 }
 
@@ -472,18 +691,24 @@ function renderProfileFriends(friends: Friend[]): void {
 
   function initChat(): void {
     const messagesContainer = document.getElementById("chat-messages");
+    const conversationsContainer = document.getElementById("chat-conversations");
     const chatForm = document.getElementById("chat-form") as HTMLFormElement | null;
     const chatInput = document.getElementById("chat-input") as HTMLInputElement | null;
-    const chatUserIdInput = document.getElementById("chat-user-id") as HTMLInputElement | null;
-    const chatLoadBtn = document.getElementById("chat-load") as HTMLButtonElement | null;
   
-    if (!messagesContainer || !chatForm || !chatInput || !chatUserIdInput || !chatLoadBtn) {
+    if (!messagesContainer || !conversationsContainer || !chatForm || !chatInput) {
       return;
     }
+    const chatConversationsRoot = conversationsContainer;
   
     let currentOtherUserId: number | null = null;
     let messages: ChatMessage[] = [];
-  
+    let usernames = new Map<number, string>();
+
+    async function refreshUsernames(): Promise<void> {
+      const users = await fetchUsers();
+      usernames = new Map(users.map((user) => [user.id, user.username]));
+    }
+
     function renderMessages(): void {
       messagesContainer!.innerHTML =
         messages.length === 0
@@ -492,8 +717,8 @@ function renderProfileFriends(friends: Friend[]): void {
               .map(
                 (m) => `
                 <div class="message">
-                  <strong>${m.senderId}</strong> : ${m.content}
-                  <small>${new Date(m.createdTimer).toLocaleTimeString()}</small>
+                  <strong>${usernames.get(m.senderId) ?? `#${m.senderId}`}</strong> : ${m.content}
+                  <small>${new Date(m.createdAt ?? m.createdTimer ?? Date.now()).toLocaleTimeString()}</small>
                 </div>
               `
               )
@@ -501,24 +726,62 @@ function renderProfileFriends(friends: Friend[]): void {
   
       messagesContainer!.scrollTop = messagesContainer!.scrollHeight;
     }
-  
-    async function loadConversation(): Promise<void> {
-      const value = chatUserIdInput!.value.trim();
-      const otherId = Number(value);
-      if (!value || Number.isNaN(otherId)) {
-        alert(t("chat-user-invalid"));
-        return;
-      }
-  
+
+    async function loadConversationById(otherId: number): Promise<void> {
       currentOtherUserId = otherId;
+      await refreshUsernames();
       messages = await fetchChatMess(otherId);
       renderMessages();
     }
-  
-    chatLoadBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      loadConversation();
-    });
+
+    async function refreshConversationsList(): Promise<void> {
+      const currentUserId = getCurrentUserIdFromToken();
+      if (!currentUserId) {
+        chatConversationsRoot.innerHTML = `<p>${t("section-login-required")}</p>`;
+        return;
+      }
+
+      await refreshUsernames();
+      const candidates = [...usernames.entries()].filter(([id]) => id !== currentUserId);
+      const conversations = await Promise.all(candidates.map(async ([id, username]) => {
+        const convMessages = await fetchChatMess(id);
+        const lastMessage = convMessages[convMessages.length - 1];
+        return { id, username, convMessages, lastMessage };
+      }));
+
+      const started = conversations
+        .filter((conversation) => conversation.convMessages.length > 0)
+        .sort((a, b) => {
+          const aTime = a.lastMessage ? new Date(a.lastMessage.createdAt ?? a.lastMessage.createdTimer ?? 0).getTime() : 0;
+          const bTime = b.lastMessage ? new Date(b.lastMessage.createdAt ?? b.lastMessage.createdTimer ?? 0).getTime() : 0;
+          return bTime - aTime;
+        });
+
+      if (started.length === 0) {
+        chatConversationsRoot.innerHTML = `<p>${t("chat-no-conversations")}</p>`;
+        return;
+      }
+
+      chatConversationsRoot.innerHTML = started
+        .map((conversation) => {
+          const preview = conversation.lastMessage?.content ?? "";
+          return `
+            <button type="button" class="chat-conversation-btn" data-user-id="${conversation.id}">
+              <strong>${conversation.username}</strong>
+              <div>${preview}</div>
+            </button>
+          `;
+        })
+        .join("");
+
+      chatConversationsRoot.querySelectorAll<HTMLButtonElement>(".chat-conversation-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const id = Number(button.dataset.userId);
+          if (Number.isNaN(id)) return;
+          void loadConversationById(id);
+        });
+      });
+    }
   
     chatForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -529,11 +792,25 @@ function renderProfileFriends(friends: Friend[]): void {
       const content = chatInput.value.trim();
       if (!content) return;
   
-      await sendChatMessage(currentOtherUserId, content);
-      messages = await fetchChatMess(currentOtherUserId);
-      renderMessages();
+      const sent = await sendChatMessage(currentOtherUserId, content);
+      if (!sent) return;
+      await loadConversationById(currentOtherUserId);
+      await refreshConversationsList();
       chatInput.value = "";
     });
+
+    window.addEventListener("chat-open-user", (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId?: number }>;
+      const userId = Number(customEvent.detail?.userId);
+      if (!Number.isFinite(userId) || userId <= 0) return;
+      void loadConversationById(userId);
+    });
+
+    void refreshConversationsList();
+    if (pendingChatTargetUserId) {
+      void loadConversationById(pendingChatTargetUserId);
+      pendingChatTargetUserId = null;
+    }
   }
 
 function initGames(): void {
@@ -557,30 +834,36 @@ function initGames(): void {
 async function initLeaderboard(): Promise<void> {
     const leaderboardTable = document.querySelector("#leaderboard-table tbody");
     if (!leaderboardTable) return;
-  
-    const rows = await fetchLeaderboard("chess");
-  
-    if (rows.length === 0) {
+    bindXpProfileActionButtons();
+
+    const statsByUser = await fetchUserLeaderboardStats();
+    if (statsByUser.length === 0) {
       leaderboardTable.innerHTML = `
         <tr>
           <td colspan="3">${t("leaderboard-empty")}</td>
         </tr>
       `;
+      await renderXpLeaderboard([]);
       return;
     }
-  
-    leaderboardTable.innerHTML = rows
-      .map((row) => {
-        const username = row.player?.username ?? `User #${row.winnerId}`;
+
+    const rankingByWins = [...statsByUser]
+      .sort((a, b) => (b.user.elo ?? 500) - (a.user.elo ?? 500))
+      .slice(0, 20);
+
+    leaderboardTable.innerHTML = rankingByWins
+      .map((entry) => {
         return `
           <tr>
-            <td>${username}</td>
-            <td>${row.wins}</td>
+            <td>${entry.user.username}</td>
+            <td>${entry.user.elo ?? 500}</td>
             <td>${t("chess")}</td>
           </tr>
         `;
       })
       .join("");
+
+    await renderXpLeaderboard(statsByUser);
 }
 
 function initMatchForm(): void {
@@ -623,6 +906,12 @@ function initMatchForm(): void {
 function main(): void {
     initLanguage();
     refreshTranslations();
+    window.addEventListener("chess-xp-updated", () => {
+        const profileView = document.getElementById("view-profile");
+        if (profileView && !profileView.hidden) {
+            void initProfile();
+        }
+    });
     initProfileAvatarPicker();
     initViewSwitching();
     initProfile();

@@ -283,6 +283,7 @@ main{
 
 .profile_l {
     flex: 0 0 auto;
+    width: 180px;
 }
 
 #profile-avatar {
@@ -299,6 +300,33 @@ main{
 #profile-avatar:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+
+.profile-xp {
+    margin-top: 12px;
+    width: 100%;
+}
+
+.profile-xp__meta {
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.profile-xp__bar {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.2);
+    border: 1px solid rgba(255,255,255,.28);
+    overflow: hidden;
+}
+
+.profile-xp__fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
+    transition: width .3s ease;
 }
 
 .profile_r {
@@ -520,4 +548,288 @@ body.register-page {
 .register-btn-secondary {
     background: rgba(255,255,255,.16);
     color: #000;
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+@media (max-width: 1024px) {
+    .topbar {
+        padding: 18px 20px;
+    }
+
+    main {
+        padding: 20px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(2, minmax(180px, 240px));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 14px 16px;
+    }
+
+    .brand {
+        text-align: center;
+    }
+
+    .topnav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .pill {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    main,
+    body.home main {
+        height: auto;
+        min-height: calc(100vh - 120px);
+        overflow: auto;
+        padding: 16px;
+    }
+
+    .view {
+        min-height: auto;
+        align-content: start;
+        padding-bottom: 24px;
+    }
+
+    .profile_container {
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .profile_l {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile_r {
+        width: 100%;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    .card {
+        width: min(320px, 100%);
+        margin: 0 auto;
+    }
+
+    #view-Login #loginForm {
+        width: 100%;
+    }
+
+    #view-Login #loginForm > div {
+        width: min(340px, 100%);
+    }
+
+    #view-Login #loginForm input {
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #view-Login .login-actions {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 0;
+        width: min(340px, 100%);
+    }
+
+    #view-Login .login-btn,
+    #view-Login .oauth42-btn {
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #game-report {
+        width: 100%;
+    }
+
+    #match-form label {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    #match-form input,
+    #match-form select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #pong-canvas {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+    }
+
+    #chess-board {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    #leaderboard-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    #leaderboard-table th,
+    #leaderboard-table td {
+        word-break: break-word;
+    }
+
+    #xp-leaderboard-table th,
+    #xp-leaderboard-table td {
+        word-break: break-word;
+    }
+
+    .register-main {
+        padding: 16px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+}
+
+#xp-leaderboard-table {
+    width: min(700px, 100%);
+    border-collapse: collapse;
+}
+
+#xp-leaderboard-table th,
+#xp-leaderboard-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.25);
+    text-align: left;
+}
+
+#chat-conversations-panel {
+    width: min(900px, 100%);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    background: rgba(255,255,255,.1);
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+#chat-conversations {
+    display: grid;
+    gap: 8px;
+}
+
+.chat-conversation-btn {
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 10px;
+    background: rgba(255,255,255,.14);
+    color: var(--text);
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.chat-conversation-btn:hover {
+    background: rgba(255,255,255,.22);
+}
+
+.xp-top-profile {
+    width: min(700px, 100%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.xp-profile-btn {
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 10px;
+    background: rgba(255,255,255,.16);
+    color: var(--text);
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.xp-profile-actions {
+    width: min(700px, 100%);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    background: rgba(255,255,255,.1);
+    padding: 12px;
+}
+
+.xp-profile-actions__buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.xp-profile-actions__buttons button {
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 10px;
+    background: rgba(255,255,255,.16);
+    color: var(--text);
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .topnav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .pill {
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        padding: 8px 8px;
+    }
+
+    main,
+    body.home main {
+        padding: 12px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 13px;
+    }
+
+    .register-header h1 {
+        font-size: 26px;
+    }
+
+    #chat-messages {
+        max-height: 220px !important;
+    }
 }

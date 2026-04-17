@@ -5,10 +5,13 @@ import { Op } from "sequelize";
 
 const messageRoute = Router();
 
-messageRoute.get("/:otheruserId", auth, async (req: AuthRequest, res) => {
+messageRoute.get("/:otherUserId", auth, async (req: AuthRequest, res) => {
     try {
         const currentUserId = req.user!.id;
         const otherUserId = Number(req.params.otherUserId);
+        if (!Number.isFinite(otherUserId) || otherUserId <= 0) {
+            return res.status(400).json({ error: "ID utilisateur invalide" });
+        }
 
         const messages = await Message.findAll({
             where: {
@@ -26,11 +29,14 @@ messageRoute.get("/:otheruserId", auth, async (req: AuthRequest, res) => {
     }
 });
 
-messageRoute.post("/", auth, async (req: AuthRequest, res) => {
+messageRoute.post("/:otherUserId", auth, async (req: AuthRequest, res) => {
     try {
         const currentUserId = req.user!.id;
-        const otherUserId = Number(req.params.otheruserId);
+        const otherUserId = Number(req.params.otherUserId);
         const {content} = req.body;
+        if (!Number.isFinite(otherUserId) || otherUserId <= 0) {
+            return res.status(400).json({ error: "ID utilisateur invalide" });
+        }
 
         if (!content || content.trim() === "")
             return res.status(400).json({error: "Le contenu du message est requis"});

@@ -57,5 +57,6 @@ export type ChatMessage = {
     senderId: number;
     receiverId: number;
     content: string;
-    createdTimer: string;
+    createdAt?: string;
+    createdTimer?: string;
 }

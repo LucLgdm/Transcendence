@@ -1,5 +1,8 @@
 import { Router } from "express";
 import crypto from "crypto";
+import RemindMatch from "../models/remindmatch";
+import User from "../models/User";
+import sequelize from "../config/database";
 
 type Color = "White" | "Black";
 
@@ -20,6 +23,8 @@ type ChessSession = {
 	id: string;
 	whitePlayerId: string;
 	blackPlayerId?: string;
+	password: string;
+	matchPersisted: boolean;
 	board: Board;
 	currentPlayer: Color;
 	gameStatus: string;
@@ -30,6 +35,56 @@ type ChessSession = {
 
 const router = Router();
 const sessions = new Map<string, ChessSession>();
+
+function parseUserId(playerId?: string): number | null {
+	if (!playerId) return null;
+	const match = /^user-(\d+)$/.exec(playerId);
+	if (!match) return null;
+	const value = Number(match[1]);
+	return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function getWinnerUserId(session: ChessSession): number | null {
+	if (!session.gameStatus.startsWith("checkmate ")) return null;
+	const defeatedColor = session.gameStatus.slice("checkmate ".length);
+	if (defeatedColor === "White") {
+		return parseUserId(session.blackPlayerId);
+	}
+	if (defeatedColor === "Black") {
+		return parseUserId(session.whitePlayerId);
+	}
+	return null;
+}
+
+function isFinishedStatus(status: string): boolean {
+	return status.startsWith("checkmate ") || status.startsWith("stalemate ") || status.startsWith("draw ");
+}
+
+async function persistFinishedMatchIfPossible(session: ChessSession): Promise<void> {
+	if (session.matchPersisted || !isFinishedStatus(session.gameStatus)) return;
+	const whiteUserId = parseUserId(session.whitePlayerId);
+	const blackUserId = parseUserId(session.blackPlayerId);
+	if (!whiteUserId || !blackUserId) return;
+	const winnerUserId = getWinnerUserId(session);
+
+	await sequelize.transaction(async (transaction) => {
+		await RemindMatch.create({
+			game: "chess",
+			player1ID: whiteUserId,
+			player2ID: blackUserId,
+			winnerID: winnerUserId,
+			scoreP1: null,
+			scoreP2: null,
+		}, { transaction });
+
+		if (winnerUserId) {
+			const loserUserId = winnerUserId === whiteUserId ? blackUserId : whiteUserId;
+			await User.increment("elo", { by: 10, where: { id: winnerUserId }, transaction });
+			await User.decrement("elo", { by: 10, where: { id: loserUserId }, transaction });
+		}
+	});
+	session.matchPersisted = true;
+}
 
 function buildInitialBoard(): Board {
 	const board: Board = Array(8)
@@ -79,9 +134,12 @@ function publicSession(session: ChessSession) {
 }
 
 router.post("/", (req, res) => {
-	const { playerId } = req.body as { playerId?: string };
+	const { playerId, password } = req.body as { playerId?: string; password?: string };
 	if (!playerId) {
 		return res.status(400).json({ error: "playerId requis" });
+	}
+	if (!password || !password.trim()) {
+		return res.status(400).json({ error: "Mot de passe requis" });
 	}
 
 	const id = crypto.randomUUID();
@@ -89,6 +147,8 @@ router.post("/", (req, res) => {
 	const session: ChessSession = {
 		id,
 		whitePlayerId: playerId,
+		password: password.trim(),
+		matchPersisted: false,
 		board: buildInitialBoard(),
 		currentPlayer: "White",
 		gameStatus: "inProgress",
@@ -107,7 +167,7 @@ router.post("/", (req, res) => {
 
 router.post("/:id/join", (req, res) => {
 	const { id } = req.params;
-	const { playerId } = req.body as { playerId?: string };
+	const { playerId, password } = req.body as { playerId?: string; password?: string };
 	const session = sessions.get(id);
 
 	if (!session) {
@@ -115,6 +175,9 @@ router.post("/:id/join", (req, res) => {
 	}
 	if (!playerId) {
 		return res.status(400).json({ error: "playerId requis" });
+	}
+	if (!password || password.trim() !== session.password) {
+		return res.status(401).json({ error: "Mot de passe invalide" });
 	}
 
 	if (session.whitePlayerId === playerId) {
@@ -142,7 +205,7 @@ router.get("/:id", (req, res) => {
 	return res.json(publicSession(session));
 });
 
-router.post("/:id/move", (req, res) => {
+router.post("/:id/move", async (req, res) => {
 	const session = sessions.get(req.params.id);
 	if (!session) {
 		return res.status(404).json({ error: "Partie introuvable" });
@@ -183,6 +246,11 @@ router.post("/:id/move", (req, res) => {
 	session.gameStatus = gameStatus;
 	session.moveCount += 1;
 	session.updatedAt = Date.now();
+	try {
+		await persistFinishedMatchIfPossible(session);
+	} catch (error) {
+		console.error("Erreur enregistrement historique partie en ligne:", error);
+	}
 
 	return res.json(publicSession(session));
 });

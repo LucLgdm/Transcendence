@@ -29,7 +29,7 @@ FriendRoute.post("/:id",  auth, async (req: AuthRequest, res) => {
 
         const friendship = await Friendship.create({
             userId: currentUseId, friendId,
-            status: "attente",
+            status: "accepter",
         });
 
         res.status(201).json(friendship);
@@ -106,8 +106,15 @@ FriendRoute.get("/", auth, async (req: AuthRequest, res) => {
             ],
         });
 
-        const friendIds = friendships.map((friendship) => friendship.friendId);
-        res.json(friendIds);
+        const friends = friendships
+            .map((friendship) => friendship.get("friend") as User | null)
+            .filter((friend): friend is User => Boolean(friend))
+            .map((friend) => ({
+                id: friend.id,
+                username: friend.username,
+                email: friend.email,
+            }));
+        res.json(friends);
     } catch (err) {
         res.status(500).json({error:"Erreur"});
     }

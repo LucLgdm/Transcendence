@@ -70,7 +70,7 @@ router.get("/me", auth, async (req: AutRequest, res) => {
         }
 
         const user = await User.findByPk(req.user.id, {
-            attributes: ["id", "username", "email", "createdAt"],
+            attributes: ["id", "username", "email", "createdAt", "elo", "profile_picture"],
         });
 
         if (!user) {

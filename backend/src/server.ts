@@ -1,7 +1,10 @@
 import express from 'express';
 import { connectDatabase } from './config/database';
+import sequelize from "./config/database";
 import User from "./models/User";
 import Friendship from "./models/Friendship";
+import Message from "./models/Message";
+import RemindMatch from "./models/remindmatch";
 import userRoutes from "./routes/index";
 import FriendRoute from "./routes/friend";
 import remindMatchRoute from "./routes/remindmatch";
@@ -23,10 +26,13 @@ app.use("/remind-matches", remindMatchRoute);
 app.use("/chess-games", chessGameRoute);
 async function bootstrap() {
 	await connectDatabase();
+	await sequelize.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS elo INTEGER NOT NULL DEFAULT 500;");
 	// Création des tables si elles n'existent pas
 	await User.sync();
 	await Friendship.sync();
-	console.log("User & Friendship tables synced");
+	await Message.sync();
+	await RemindMatch.sync();
+	console.log("User, Friendship, Message & RemindMatch tables synced");
 	app.listen(PORT, "0.0.0.0", () => {
 		console.log(`Server is running on http://0.0.0.0:${PORT}`);
 	});

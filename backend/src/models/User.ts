@@ -11,6 +11,7 @@ interface UserAttributes {
 	password?: string;
 	login_42?: string;
 	profile_picture?: string;
+	elo: number;
 	createdAt?: Date;
 	updatedAt?: Date;
 }
@@ -20,7 +21,7 @@ interface UserAttributes {
  * (id, createdAt, updatedAt sont générés automatiquement)
  */
 interface UserCreationAttributes
-extends Optional<UserAttributes, "id"> {}
+extends Optional<UserAttributes, "id" | "elo"> {}
 
 /**
  * Classe User
@@ -35,6 +36,7 @@ implements UserAttributes
 	public password?: string;
 	public login_42?: string;
 	public profile_picture?: string;
+	public elo!: number;
 
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
@@ -79,6 +81,11 @@ User.init(
 		profile_picture: {
 			type: DataTypes.STRING,
 			allowNull: true,
+		},
+		elo: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			defaultValue: 500,
 		},
 	},
 	{

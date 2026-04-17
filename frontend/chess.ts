@@ -418,6 +418,63 @@ let chessGame: ChessGame | null = null;
 let onlineGameId: string | null = null;
 let onlinePlayerColor: Color | null = null;
 let pollTimer: number | null = null;
+let currentGameRewarded = false;
+
+function getCurrentUserIdFromToken(): number | null {
+	const token = localStorage.getItem("token");
+	if (!token) return null;
+	const payload = token.split(".")[1];
+	if (!payload) return null;
+	try {
+		const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { id?: number | string };
+		const id = Number(json.id);
+		return Number.isFinite(id) && id > 0 ? id : null;
+	} catch {
+		return null;
+	}
+}
+
+function addLocalChessXpForCurrentUser(xpGain: number): boolean {
+	const userId = getCurrentUserIdFromToken();
+	if (!userId) return false;
+	const key = `chess-local-xp-${userId}`;
+	const currentValue = Number(localStorage.getItem(key) ?? "0");
+	const safeCurrentValue = Number.isFinite(currentValue) && currentValue > 0 ? currentValue : 0;
+	localStorage.setItem(key, String(safeCurrentValue + xpGain));
+	return true;
+}
+
+function isFinishedStatus(status: string): boolean {
+	return status.startsWith("checkmate ") || status.startsWith("stalemate ") || status.startsWith("draw ");
+}
+
+function getWinnerColorFromStatus(status: string): Color | null {
+	if (!status.startsWith("checkmate ")) return null;
+	const defeatedColor = status.slice("checkmate ".length) as Color;
+	if (defeatedColor !== "White" && defeatedColor !== "Black") return null;
+	return defeatedColor === "White" ? "Black" : "White";
+}
+
+function maybeRewardCurrentUserXp(): void {
+	if (!chessGame || currentGameRewarded) return;
+	const status = chessGame.getGameStatus();
+	if (!isFinishedStatus(status)) return;
+
+	let xpGain = 25;
+	if (inOnlineMode()) {
+		const winnerColor = getWinnerColorFromStatus(status);
+		if (winnerColor && onlinePlayerColor === winnerColor) {
+			xpGain = 30;
+		}
+	}
+
+	const rewarded = addLocalChessXpForCurrentUser(xpGain);
+	currentGameRewarded = true;
+	if (rewarded) {
+		window.dispatchEvent(new CustomEvent("chess-xp-updated", { detail: { xpGain, status } }));
+		alert(`+${xpGain} XP`);
+	}
+}
 
 function getOrCreateClientId(): string {
 	const key = "chessClientId";
@@ -431,6 +488,22 @@ function getOrCreateClientId(): string {
 const localClientId = getOrCreateClientId();
 const inOnlineMode = (): boolean => Boolean(onlineGameId && onlinePlayerColor);
 
+function getCurrentPlayerIdentity(): string {
+	const userId = getCurrentUserIdFromToken();
+	if (userId) return `user-${userId}`;
+	return localClientId;
+}
+
+async function readApiError(response: Response, fallback: string): Promise<string> {
+	try {
+		const payload = await response.json() as { error?: string };
+		if (payload.error && payload.error.trim()) return payload.error;
+		return fallback;
+	} catch {
+		return fallback;
+	}
+}
+
 function stopOnlineSync(): void {
 	if (pollTimer !== null) {
 		window.clearInterval(pollTimer);
@@ -439,34 +512,42 @@ function stopOnlineSync(): void {
 }
 
 async function createOnlineGame(): Promise<void> {
+	const password = window.prompt("Choisis un mot de passe pour la partie");
+	if (!password || !password.trim()) {
+		alert("Création annulée: mot de passe requis");
+		return;
+	}
+
 	const response = await fetch(buildApiUrl("/chess-games"), {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ playerId: localClientId }),
+		body: JSON.stringify({ playerId: getCurrentPlayerIdentity(), password: password.trim() }),
 	});
-	if (!response.ok) return alert("Impossible de créer la partie en ligne");
+	if (!response.ok) return alert(await readApiError(response, "Impossible de créer la partie en ligne"));
 	const data = await response.json() as { gameId: string; color: Color } & OnlineChessSession;
 	onlineGameId = data.gameId;
 	onlinePlayerColor = data.color;
 	if (!chessGame) chessGame = new ChessGame("White");
 	chessGame.loadState({ board: data.board, currentPlayer: data.currentPlayer, gameStatus: data.gameStatus, enPassantTarget: null, halfMoveClock: 0, positionHistory: [] });
+	currentGameRewarded = false;
 	startOnlineSync();
 	renderBoard();
-	alert(`Partie créée. Partage ce code: ${data.gameId}`);
+	alert(`Partie créée. Code: ${data.gameId}`);
 }
 
-async function joinOnlineGame(gameId: string): Promise<void> {
+async function joinOnlineGame(gameId: string, password: string): Promise<void> {
 	const response = await fetch(buildApiUrl(`/chess-games/${gameId}/join`), {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ playerId: localClientId }),
+		body: JSON.stringify({ playerId: getCurrentPlayerIdentity(), password: password.trim() }),
 	});
-	if (!response.ok) return alert("Impossible de rejoindre la partie");
+	if (!response.ok) return alert(await readApiError(response, "Impossible de rejoindre la partie"));
 	const data = await response.json() as { gameId: string; color: Color } & OnlineChessSession;
 	onlineGameId = data.gameId;
 	onlinePlayerColor = data.color;
 	if (!chessGame) chessGame = new ChessGame("White");
 	chessGame.loadState({ board: data.board, currentPlayer: data.currentPlayer, gameStatus: data.gameStatus, enPassantTarget: null, halfMoveClock: 0, positionHistory: [] });
+	currentGameRewarded = false;
 	startOnlineSync();
 	renderBoard();
 }
@@ -491,7 +572,7 @@ async function pushOnlineMove(): Promise<boolean> {
 	const response = await fetch(buildApiUrl(`/chess-games/${onlineGameId}/move`), {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ playerId: localClientId, board: state.board, currentPlayer: state.currentPlayer, gameStatus: state.gameStatus }),
+		body: JSON.stringify({ playerId: getCurrentPlayerIdentity(), board: state.board, currentPlayer: state.currentPlayer, gameStatus: state.gameStatus }),
 	});
 	return response.ok;
 }
@@ -517,6 +598,7 @@ function getPieceSymbol(piece: Piece): string {
 function renderBoard(): void {
 	const chessB = document.getElementById("chess-board");
 	if (!chessB || !chessGame) return;
+	maybeRewardCurrentUserXp();
 	chessB.innerHTML = "";
 	const board = chessGame.getBoard();
 	const selected = chessGame.getSelectedPiece();
@@ -588,6 +670,7 @@ function colorSelection(): void {
 	const chessB = document.getElementById("chess-board");
 	if (!chessB) return;
 	chessB.innerHTML = "";
+	currentGameRewarded = false;
 	const title = document.createElement("h2");
 	title.textContent = "Choisissez un mode de jeu";
 	const wrap = document.createElement("div");
@@ -605,7 +688,9 @@ function colorSelection(): void {
 	join.addEventListener("click", () => {
 		const gameId = window.prompt("Entrez le code de partie");
 		if (!gameId) return;
-		void joinOnlineGame(gameId.trim());
+		const password = window.prompt("Entrez le mot de passe de la partie");
+		if (!password || !password.trim()) return;
+		void joinOnlineGame(gameId.trim(), password.trim());
 	});
 	wrap.append(localWhite, localBlack, host, join);
 	chessB.append(title, wrap);
@@ -616,6 +701,7 @@ function startLocalGame(color: Color): void {
 	onlineGameId = null;
 	onlinePlayerColor = null;
 	chessGame = new ChessGame(color);
+	currentGameRewarded = false;
 	renderBoard();
 }
 
