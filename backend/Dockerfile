@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/01/28 10:57:48 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/23 14:17:55 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/04/16 15:22:04 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,6 +23,10 @@ RUN npm ci
 RUN npm install jsonwebtoken bcrypt && npm install -D @types/jsonwebtoken @types/bcrypt
 # Gérer les requêtes cross-origin avec CORS
 RUN npm install cors && npm install -D @types/cors
+
+RUN npm install speakeasy qrcode
+
+RUN npm install -D @types/speakeasy @types/qrcode
 
 COPY src ./src
 COPY tsconfig.json ./

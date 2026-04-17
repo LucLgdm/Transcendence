@@ -13,6 +13,8 @@ interface UserAttributes {
 	profile_picture?: string;
 	createdAt?: Date;
 	updatedAt?: Date;
+	twoFactorEnabled?: boolean;
+	twoFactorSecret?: string | null;
 }
 
 /**
@@ -38,6 +40,10 @@ implements UserAttributes
 
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
+
+	// 2FA
+	public twoFactorEnabled!: boolean;
+	public twoFactorSecret!: string | null;
 }
 ``
 /**
@@ -79,6 +85,17 @@ User.init(
 		profile_picture: {
 			type: DataTypes.STRING,
 			allowNull: true,
+		},
+
+		// 2FA
+		twoFactorEnabled: {
+		type: DataTypes.BOOLEAN,
+		defaultValue: false,
+		},
+
+		twoFactorSecret: {
+		type: DataTypes.STRING,
+		allowNull: true,
 		},
 	},
 	{
