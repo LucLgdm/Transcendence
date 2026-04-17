@@ -1,8 +1,11 @@
 import { buildApiUrl } from "./api.js";
+import { applyTranslations, initLanguage, t } from "./i18n/index.js";
 const registerForm = document.getElementById("registerForm");
 const newUserName = document.getElementById("userName");
 const newEmail = document.getElementById("email");
 const newPassword = document.getElementById("password");
+initLanguage();
+applyTranslations();
 registerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
@@ -16,16 +19,16 @@ registerForm.addEventListener("submit", async (event) => {
             })
         });
         if (response.ok) {
-            alert("Compte créé avec succès.");
+            alert(t("register-success"));
             window.location.replace("./index.html");
             return;
         }
-        const error = await response.json().catch(() => ({ error: "Erreur inconnue" }));
-        alert(error.error || "Impossible de créer le compte.");
+        const error = await response.json().catch(() => ({ error: t("unknown-error") }));
+        alert(error.error || t("register-failed"));
         console.error("Erreur:", error);
     }
     catch (error) {
         console.error("Erreur réseau:", error);
-        alert("Erreur réseau, impossible de créer le compte.");
+        alert(t("network-register-error"));
     }
 });

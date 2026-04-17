@@ -2,28 +2,28 @@
 <html lang="fr">
 <head>
 	<meta charset="UTF-8">
-	<title>Connexion</title>
+	<title data-i18n="login-page-title">Connexion</title>
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-	<h1>Connexion</h1>
+	<h1 data-i18n="login-page-title">Connexion</h1>
 
 		<form id="loginForm">
 			<div>
-				<label for="username">Identifiant :</label><br>
+				<label for="username" data-i18n="username">Identifiant :</label><br>
 				<input type="text" id="username" name="username" required>
 			</div>
 
 			<br>
 				<div>
-					<label for="password">Mot de passe :</label><br>
+					<label for="password" data-i18n="password">Mot de passe :</label><br>
 					<input type="password" id="password" name="password" required>
 				</div>
 			<br>
-			<button type="submit">Se connecter</button>
+			<button type="submit" data-i18n="login">Se connecter</button>
 
 			<br>
-				<a id="oauth42Link" href="#">
+				<a id="oauth42Link" href="#" data-i18n="42-login">
 					Connect with 42
 				</a>
 			<br>
@@ -31,7 +31,7 @@
 				id = "createAccountBtn"
 				type="button"
 				onclick="window.location.href='register.html'">
-				Créer un compte
+				<span data-i18n="create-account">Créer un compte</span>
 			</button>
 		</form>
 

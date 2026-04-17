@@ -1,10 +1,14 @@
 import { User, userMap } from "./user.js";
 import { buildApiUrl } from "./api.js";
+import { applyTranslations, initLanguage, t } from "./i18n/index.js";
 
 const registerForm = document.getElementById("registerForm") as HTMLFormElement;
 const newUserName = document.getElementById("userName") as HTMLInputElement;
 const newEmail = document.getElementById("email") as HTMLInputElement;
 const newPassword = document.getElementById("password") as HTMLInputElement;
+
+initLanguage();
+applyTranslations();
 
 registerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -21,16 +25,16 @@ registerForm.addEventListener("submit", async (event) => {
         });
 
         if (response.ok) {
-            alert("Compte créé avec succès.");
+            alert(t("register-success"));
             window.location.replace("./index.html");
             return;
         }
 
-        const error = await response.json().catch(() => ({ error: "Erreur inconnue" }));
-        alert(error.error || "Impossible de créer le compte.");
+        const error = await response.json().catch(() => ({ error: t("unknown-error") }));
+        alert(error.error || t("register-failed"));
         console.error("Erreur:", error);
     } catch (error) {
         console.error("Erreur réseau:", error);
-        alert("Erreur réseau, impossible de créer le compte.");
+        alert(t("network-register-error"));
     }
 });

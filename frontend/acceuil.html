@@ -2,16 +2,21 @@
 <html lang="fr">
 <head>
 	<meta charset="UTF-8">
-	<title>Accueil</title>
+	<title data-i18n="accueil-title">Accueil</title>
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-	<h1>Bienvenue</h1>
+	<h1 data-i18n="welcome">Bienvenue</h1>
 
-	<button onclick="window.location.href='login.html'">
+	<button onclick="window.location.href='login.html'" data-i18n="go-to-login">
 		Aller à la page de connexion
 	</button>
-	<button id="resetBtn">Réinitialiser les utilisateurs</button>
+	<button id="resetBtn" data-i18n="reset-users">Réinitialiser les utilisateurs</button>
+	<script type="module">
+		import { applyTranslations, initLanguage } from "./i18n/index.js";
+		initLanguage();
+		applyTranslations();
+	</script>
 	<script type="module" src="./accueil.js"></script>
 </body>
 </html>

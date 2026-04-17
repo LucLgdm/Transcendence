@@ -1,11 +1,15 @@
 import { User, userMap } from "./user.js";
 import { buildApiUrl } from "./api.js";
+import { applyTranslations, initLanguage, t } from "./i18n/index.js";
 
 
 const form = document.getElementById("loginForm") as HTMLFormElement;
 const usernameInput = document.getElementById("username") as HTMLInputElement;
 const passwordInput = document.getElementById("password") as HTMLInputElement;
 const oauth42Link = document.getElementById("oauth42Link") as HTMLAnchorElement | null;
+
+initLanguage();
+applyTranslations();
 
 if (oauth42Link) {
 	oauth42Link.href = buildApiUrl("/users/auth/42");
@@ -21,7 +25,7 @@ if (tokenFromUrl) {
 	window.location.href = "./index.html";
 } else if (errorFromUrl) {
 	console.error("OAuth 42 error:", errorFromUrl);
-	alert("Authentification 42 échouée: " + errorFromUrl);
+	alert(`${t("oauth-failed")}: ${errorFromUrl}`);
 }
 form.addEventListener("submit", async (event) => {
 	event.preventDefault();
@@ -39,17 +43,17 @@ form.addEventListener("submit", async (event) => {
 		if (response.ok) {
 			const data = await response.json();
 			localStorage.setItem("token", data.token);
-			alert("Connexion réussie.");
+			alert(t("login-success"));
 			window.location.replace("./index.html");
 			return;
 		}
 
-		const error = await response.json().catch(() => ({ error: "Identifiants incorrects" }));
-		alert(error.error || "Connexion impossible.");
+		const error = await response.json().catch(() => ({ error: t("invalid-credentials") }));
+		alert(error.error || t("login-failed"));
 		console.log("Login failed:", error);
 	} catch (error) {
 		console.error("Erreur réseau:", error);
-		alert("Erreur réseau, impossible de se connecter.");
+		alert(t("network-login-error"));
 	}
 });
 

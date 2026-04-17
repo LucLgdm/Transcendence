@@ -1,10 +1,14 @@
 import { buildApiUrl } from "./api.js";
+import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 function getAuthToken() {
     return localStorage.getItem("token");
 }
 const DEFAULT_PROFILE_AVATAR = "./image/image.png";
 let currentProfileUserId = null;
 let profileAvatarPickerBound = false;
+function refreshTranslations() {
+    applyTranslations();
+}
 function getStoredProfileAvatar(userId) {
     return localStorage.getItem(`profile-avatar-${userId}`);
 }
@@ -20,7 +24,7 @@ function initProfileAvatarPicker() {
         return;
     avatarImg.addEventListener("click", () => {
         if (!getAuthToken()) {
-            alert("Connectez-vous pour changer votre photo de profil.");
+            alert(t("avatar-login-required"));
             return;
         }
         avatarInput.click();
@@ -30,7 +34,7 @@ function initProfileAvatarPicker() {
         if (!file)
             return;
         if (!file.type.startsWith("image/")) {
-            alert("Veuillez sélectionner un fichier image.");
+            alert(t("avatar-select-image"));
             avatarInput.value = "";
             return;
         }
@@ -144,7 +148,7 @@ async function deleteFriend(friendId) {
 async function podMatch(pload) {
     const token = getAuthToken();
     if (!token) {
-        alert("Veuillez vous connecter pour déclarer une partie");
+        alert(t("match-submit-login-required"));
         return;
     }
     const res = await fetch(buildApiUrl("/remind-matches"), {
@@ -156,11 +160,11 @@ async function podMatch(pload) {
         body: JSON.stringify(pload),
     });
     if (!res.ok) {
-        alert("Erreur lors de la déclaration de la partie");
+        alert(t("match-submit-error"));
         return;
     }
     else {
-        alert("Partie déclarée avec succès");
+        alert(t("match-submit-success"));
     }
 }
 async function fetchLeaderboard(game) {
@@ -209,7 +213,7 @@ function initViewSwitching() {
     }
     function setActiveView(target) {
         if (protectedViews.has(target) && !isAuthenticated()) {
-            alert("Veuillez vous connecter pour accéder à cette section.");
+            alert(t("section-login-required"));
             target = "Login";
         }
         views.forEach((view) => {
@@ -261,7 +265,7 @@ async function initProfile() {
     const token = localStorage.getItem("token");
     if (!token) {
         currentProfileUserId = null;
-        profileInfo.innerHTML = '<p>Veuillez vous connecter pour accéder à votre profil</p>';
+        profileInfo.innerHTML = `<p>${t("profile-login-required")}</p>`;
         if (avatarImg) {
             avatarImg.src = DEFAULT_PROFILE_AVATAR;
         }
@@ -276,17 +280,27 @@ async function initProfile() {
             },
         });
         if (!reponse.ok) {
-            profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+            profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
             return;
         }
         const user = await reponse.json();
         const currentUserId = user.id;
         currentProfileUserId = currentUserId;
+        const creationDateValue = user.createdAt ?? user.createdAT;
         profileInfo.innerHTML = `
-        <p>Nom d'utilisateur: ${user.username}</p>
-        <p>Email: ${user.email}</p>
-        <p>Date de création: ${user.createdAT ? new Date(user.createdAT).toLocaleDateString() : "N/A"}</p>
+        <p>${t("profile-username")}: ${user.username}</p>
+        <p>${t("profile-email")}: ${user.email}</p>
+        <p>${t("profile-created-at")}: ${creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"}</p>
+        <button id="profile-language-btn" type="button">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
       `;
+        const profileLanguageBtn = document.getElementById("profile-language-btn");
+        profileLanguageBtn?.addEventListener("click", () => {
+            setLanguage(nextLanguage());
+            refreshTranslations();
+            void initProfile();
+            void initLeaderboard();
+            initGames();
+        });
         if (avatarImg) {
             const customAvatar = getStoredProfileAvatar(currentUserId);
             avatarImg.src =
@@ -302,7 +316,7 @@ async function initProfile() {
         const matchesList = document.getElementById("profile-matches");
         if (matchesList) {
             if (matches.length === 0) {
-                matchesList.innerHTML = "<li>Aucun match enregistré pour le moment</li>";
+                matchesList.innerHTML = `<li>${t("profile-no-matches")}</li>`;
             }
             else {
                 matchesList.innerHTML = matches
@@ -310,18 +324,18 @@ async function initProfile() {
                     const date = new Date(m.createdAt).toLocaleString();
                     let result;
                     if (m.winnerID === null) {
-                        result = "Match nul";
+                        result = t("profile-match-draw");
                     }
                     else if (m.winnerID === currentUserId) {
-                        result = "Victoire";
+                        result = t("profile-match-win");
                     }
                     else {
-                        result = "Défaite";
+                        result = t("profile-match-loss");
                     }
                     const adversaireId = m.player1ID === currentUserId ? m.player2ID : m.player1ID;
                     return `<li>
-                [${m.game}] ${result} vs joueur ${adversaireId}
-                (score: ${m.scoreP1 ?? "-"} - ${m.scoreP2 ?? "-"}) le ${date}
+                [${m.game}] ${result} ${t("profile-match-vs-player")} ${adversaireId}
+                (${t("score")}: ${m.scoreP1 ?? "-"} - ${m.scoreP2 ?? "-"}) ${t("profile-match-on")} ${date}
               </li>`;
                 })
                     .join("");
@@ -329,7 +343,7 @@ async function initProfile() {
         }
     }
     catch (error) {
-        profileInfo.innerHTML = "<p>Erreur de récupération du profil</p>";
+        profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
         if (avatarImg) {
             avatarImg.src = DEFAULT_PROFILE_AVATAR;
         }
@@ -345,11 +359,11 @@ async function initFriends() {
     let friends = [];
     function renderFriends() {
         if (friends.length === 0) {
-            friendsList.innerHTML = "<li>Aucun ami pour le moment</li>";
+            friendsList.innerHTML = `<li>${t("friends-empty")}</li>`;
             return;
         }
         friendsList.innerHTML = friends.map((friend) => `<li ${friend.username} (${friend.email})>
-            <button data_friend_id="${friend.id}" class="delete_friend">Supprimer</button>
+            <button data_friend_id="${friend.id}" class="delete_friend">${t("delete")}</button>
             </li>`).join("");
         friendsList.querySelectorAll('.delete_friend').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -370,7 +384,7 @@ async function initFriends() {
                 return;
             const friendId = Number(value);
             if (Number.isNaN(friendId)) {
-                alert("Veuillez entrer un ID valide");
+                alert(t("friend-id-invalid"));
                 return;
             }
             await addFriendById(friendId);
@@ -386,7 +400,7 @@ function renderProfileFriends(friends) {
         return;
     profileFriendsList.innerHTML =
         friends.length === 0
-            ? "<li>Aucun ami pour le moment</li>"
+            ? `<li>${t("friends-empty")}</li>`
             : friends.map((f) => `<li>${f.username} (${f.email})</li>`).join("");
 }
 function initChat() {
@@ -403,7 +417,7 @@ function initChat() {
     function renderMessages() {
         messagesContainer.innerHTML =
             messages.length === 0
-                ? "<p>Aucun message</p>"
+                ? `<p>${t("chat-empty")}</p>`
                 : messages
                     .map((m) => `
                 <div class="message">
@@ -418,7 +432,7 @@ function initChat() {
         const value = chatUserIdInput.value.trim();
         const otherId = Number(value);
         if (!value || Number.isNaN(otherId)) {
-            alert("Entrez un ID d'utilisateur valide");
+            alert(t("chat-user-invalid"));
             return;
         }
         currentOtherUserId = otherId;
@@ -432,7 +446,7 @@ function initChat() {
     chatForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (currentOtherUserId === null) {
-            alert("Choisissez d'abord un utilisateur avec qui chatter");
+            alert(t("chat-select-user-first"));
             return;
         }
         const content = chatInput.value.trim();
@@ -455,7 +469,7 @@ function initGames() {
             ctx.fillStyle = '#fff';
             ctx.font = '20px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Pong - À implémenter', pongCanvas.width / 2, pongCanvas.height / 2);
+            ctx.fillText(t("games-pong-placeholder"), pongCanvas.width / 2, pongCanvas.height / 2);
         }
     }
     initChess();
@@ -468,7 +482,7 @@ async function initLeaderboard() {
     if (rows.length === 0) {
         leaderboardTable.innerHTML = `
         <tr>
-          <td colspan="3">Aucun résultat pour le moment</td>
+          <td colspan="3">${t("leaderboard-empty")}</td>
         </tr>
       `;
         return;
@@ -480,7 +494,7 @@ async function initLeaderboard() {
           <tr>
             <td>${username}</td>
             <td>${row.wins}</td>
-            <td>${"chess"}</td>
+            <td>${t("chess")}</td>
           </tr>
         `;
     })
@@ -507,7 +521,7 @@ function initMatchForm() {
         const score1 = Number(matchscore1.value);
         const score2 = Number(matchscore2.value);
         if (!player1 || !player2) {
-            alert("manque un joeur");
+            alert(t("match-missing-player"));
             return;
         }
         const winnerId = winner === 0 ? null : winner;
@@ -516,6 +530,8 @@ function initMatchForm() {
     form.reset();
 }
 function main() {
+    initLanguage();
+    refreshTranslations();
     initProfileAvatarPicker();
     initViewSwitching();
     initProfile();

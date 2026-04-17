@@ -3,171 +3,171 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>ft_transcendence</title>
+	<title data-i18n="site-title">ft_transcendence</title>
 </head>
 
 <body>
     <header class="topbar">
-        <div class="brand">• Transcendance</div>
+        <div class="brand" data-i18n="brand">• Transcendance</div>
         <nav class="topnav">
-            <button class="pill" data-view="profile">Profil</button>
-            <button class="pill" data-view="friends">Amis</button>
-            <button class="pill" data-view="chat">Chat</button>
-            <button class="pill" data-view="games">Jeux</button>
-            <button class="pill" data-view="leaderboard">Leaderboard</button>
-			<button class="pill" data-view="Login">Login</button>
+            <button class="pill" data-view="profile" data-i18n="profile">Profil</button>
+            <button class="pill" data-view="friends" data-i18n="friends">Amis</button>
+            <button class="pill" data-view="chat" data-i18n="chat">Chat</button>
+            <button class="pill" data-view="games" data-i18n="games">Jeux</button>
+            <button class="pill" data-view="leaderboard" data-i18n="leaderboard">Leaderboard</button>
+			<button class="pill" data-view="Login" data-i18n="login">Login</button>
         </nav>
     </header>
 
     <main>
         <section id="view-home" class="view">
             <div class="center-hero">
-                <h2 class="title">Choose Your Game</h2>
-                <p class="subtitle">Select a game to start playing</p>
+                <h2 class="title" data-i18n="home-title">Choose Your Game</h2>
+                <p class="subtitle" data-i18n="home-subtitle">Select a game to start playing</p>
 
                 <div class="cards">
                     <button type="button" class="card" id="home-card-chess">
                         <div class="card__icon">♟</div>
-                        <div class="card__label">Chess</div>
+                        <div class="card__label" data-i18n="chess">Chess</div>
                     </button>
                     <button type="button" class="card" id="home-card-pong">
                         <div class="card__icon">🏓</div>
-                        <div class="card__label">Pong</div>
+                        <div class="card__label" data-i18n="pong">Pong</div>
                     </button>
                 </div>
             </div>
         </section>
 
         <section id="view-profile" class="view" hidden>
-            <h2>Profil</h2>
+            <h2 data-i18n="profile">Profil</h2>
 
             <div class="profile_container">
                 <div class="profile_l">
-                    <img id="profile-avatar" src="./image/image.png" alt="Photo de profil">
+                    <img id="profile-avatar" src="./image/image.png" alt="Photo de profil" data-i18n-alt="profile-picture">
                     <input id="profile-avatar-input" type="file" accept="image/*" hidden>
                 </div>
 
                 <div class="profile_r">
                     <div id="profile-info" class="profile_info"></div>
 
-                    <h3>Mes amis</h3>
+                    <h3 data-i18n="friendlist">Mes amis</h3>
                     <ul id="friends_list"></ul>
 
-                    <h3>Derniers matchs</h3>
+                    <h3 data-i18n="history">Derniers matchs</h3>
                     <ul id="profile-matches"></ul>
                 </div>
             </div>
         </section>
 
         <section id="view-friends" class="view" hidden>
-            <h2>Amis</h2>
+            <h2 data-i18n="friends">Amis</h2>
             <ul id="friends-list"></ul>
             <form id="add-friend-form">
-                <input type="text" id="friend-name" placeholder="Nom d'ami" required>
-                <button type="submit">Ajouter</button>
+                <input type="text" id="friend-name" data-i18n-placeholder="friend-name" placeholder="Nom d'ami" required>
+                <button type="submit" data-i18n="add">Ajouter</button>
             </form>
         </section>
 
         <section id="view-chat" class="view" hidden>
-            <h2>Chat</h2>
+            <h2 data-i18n="chat-title">Chat</h2>
           
             <div>
-              <label for="chat-user-id">ID de l'utilisateur :</label>
-              <input type="number" id="chat-user-id" placeholder="ID de l'ami">
-              <button id="chat-load">Charger la conversation</button>
+              <label for="chat-user-id" data-i18n="user-id">ID de l'utilisateur :</label>
+              <input type="number" id="chat-user-id" data-i18n-placeholder="friend-id" placeholder="ID de l'ami">
+              <button id="chat-load" data-i18n="chat-load">Charger la conversation</button>
             </div>
           
             <div id="chat-messages" style="max-height: 300px; overflow-y: auto;"></div>
           
             <form id="chat-form">
-              <input type="text" id="chat-input" placeholder="Écrire un message..." required>
-              <button type="submit">Envoyer</button>
+              <input type="text" id="chat-input" data-i18n-placeholder="chat-input" placeholder="Écrire un message..." required>
+              <button type="submit" data-i18n="send">Envoyer</button>
             </form>
           </section>
 
         <section id="view-games" class="view" hidden>
             <div id="games-choice" class="center-hero">
-                <h2 class="title">Choose Your Game</h2>
-                <p class="subtitle">Select a game to start playing</p>
+                <h2 class="title" data-i18n="home-title">Choose Your Game</h2>
+                <p class="subtitle" data-i18n="home-subtitle">Select a game to start playing</p>
 
                 <div class="cards">
                     <button type="button" class="card" id="games-card-chess">
                         <div class="card__icon">♟</div>
-                        <div class="card__label">Chess</div>
+                        <div class="card__label" data-i18n="chess">Chess</div>
                     </button>
                     <button type="button" class="card" id="games-card-pong">
                         <div class="card__icon">🏓</div>
-                        <div class="card__label">Pong</div>
+                        <div class="card__label" data-i18n="pong">Pong</div>
                     </button>
                 </div>
             </div>
 
             <div id="games-content" hidden>
             <div id="game-report">
-                <h3>Déclarer la partie finie</h3>
+                <h3 data-i18n="game-report-title">Déclarer la partie finie</h3>
                 <form id="match-form">
-                  <label>
-                    Jeu :
+                  <label for="match-game">
+                    <span data-i18n="match-game">Jeu :</span>
                     <select id="match-game">
-                      <option value="chess">Chess</option>
-                      <option value="pong">Pong</option>
+                      <option value="chess" data-i18n="chess">Chess</option>
+                      <option value="pong" data-i18n="pong">Pong</option>
                     </select>
                   </label>
                   <br />
             
-                  <label>
-                    ID joueur 1 :
+                  <label for="match-p1">
+                    <span data-i18n="match-player1">ID joueur 1 :</span>
                     <input type="number" id="match-p1" required />
                   </label>
                   <br />
             
-                  <label>
-                    ID joueur 2 :
+                  <label for="match-p2">
+                    <span data-i18n="match-player2">ID joueur 2 :</span>
                     <input type="number" id="match-p2" required />
                   </label>
                   <br />
             
-                  <label>
-                    ID vainqueur (0 = nul) :
+                  <label for="match-winner">
+                    <span data-i18n="match-winner">ID vainqueur (0 = nul) :</span>
                     <input type="number" id="match-winner" value="0" />
                   </label>
                   <br />
             
-                  <label>
-                    Score joueur 1 :
+                  <label for="match-score1">
+                    <span data-i18n="match-score1">Score joueur 1 :</span>
                     <input type="number" id="match-score1" />
                   </label>
                   <br />
             
-                  <label>
-                    Score joueur 2 :
+                  <label for="match-score2">
+                    <span data-i18n="match-score2">Score joueur 2 :</span>
                     <input type="number" id="match-score2" />
                   </label>
                   <br />
             
-                  <button type="submit">Enregistrer le match</button>
+                  <button type="submit" data-i18n="match-save">Enregistrer le match</button>
                 </form>
             </div>
             <div id="pong-container">
-                <h3>Pong</h3>
+                <h3 data-i18n="pong">Pong</h3>
                 <canvas id="pong-canvas" width="600" height="400"></canvas>
             </div>
 
             <div id="chess-container">
-                <h3>Chess</h3>
+                <h3 data-i18n="chess">Chess</h3>
                 <div id="chess-board"></div>
             </div>
             </div>
         </section>
 
         <section id="view-leaderboard" class="view" hidden>
-            <h2>Leaderboard</h2>
+            <h2 data-i18n="leaderboard">Leaderboard</h2>
             <table id="leaderboard-table">
                 <thead>
                     <tr>
-                        <th>Joueur</th>
-                        <th>Score</th>
-                        <th>Jeux</th>
+                        <th data-i18n="player">Joueur</th>
+                        <th data-i18n="score">Score</th>
+                        <th data-i18n="game-column">Jeux</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -175,14 +175,14 @@
         </section>
 
 		<section id="view-Login" class="view" hidden>
-			<h2>Login</h2>
+			<h2 data-i18n="login">Login</h2>
 			<form id="loginForm">
 				<div>
-					<label for="username">Identifiant :</label>
+					<label for="username" data-i18n="username">Identifiant :</label>
 					<input type="text" id="username" name="username" required>
 				</div>
 				<div>
-					<label for="password">Mot de passe :</label>
+					<label for="password" data-i18n="password">Mot de passe :</label>
 					<input type="password" id="password" name="password" required>
 				</div>
 				<button
@@ -190,11 +190,11 @@
 					class="login-btn login-btn-primary"
 					type="button"
 					onclick="window.location.href='register.html'">
-					Créer un compte
+					<span data-i18n="create-account">Créer un compte</span>
 				</button>
 				<div class="login-actions">
-					<button type="submit" class="login-btn login-btn-primary">Se connecter</button>
-					<a id="oauth42Link" class="oauth42-btn" href="#">Connect with 42</a>
+					<button type="submit" class="login-btn login-btn-primary" data-i18n="login">Se connecter</button>
+					<a id="oauth42Link" class="oauth42-btn" href="#" data-i18n="42-login">Connect with 42</a>
 				</div>
 			</form>
 
