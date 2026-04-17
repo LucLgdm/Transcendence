@@ -151,6 +151,114 @@ main{
     transform: none;
 }
 
+#view-friends > h3{
+    width: min(900px, 100%);
+    margin: 8px 0 6px;
+    color: var(--text);
+    text-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+
+#friend-requests-list,
+#friends-list{
+    width: min(900px, 100%);
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 14px;
+    background: rgba(255,255,255,.10);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 24px rgba(0,0,0,.10);
+}
+
+#friend-requests-list li,
+#friends-list li{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.16);
+    color: var(--text);
+}
+
+#friend-requests-list li:last-child,
+#friends-list li:last-child{
+    border-bottom: 0;
+}
+
+#friend-requests-list .accept_friend,
+#friends-list .delete_friend{
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 10px;
+    min-width: 98px;
+    padding: 8px 12px;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+#friend-requests-list .accept_friend{
+    background: linear-gradient(180deg, rgba(255,255,255,.40), rgba(255,255,255,.26));
+}
+
+#friends-list .delete_friend{
+    background: rgba(255,255,255,.18);
+}
+
+#friend-requests-list .accept_friend:hover,
+#friends-list .delete_friend:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+
+#view-friends #add-friend-form{
+    width: min(900px, 100%);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+#view-friends #friend-name{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 13px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.28);
+    background: rgba(255,255,255,.17);
+    color: var(--text);
+    outline: none;
+}
+
+#view-friends #friend-name::placeholder{
+    color: rgba(255,255,255,.65);
+}
+
+#view-friends #friend-name:focus{
+    border-color: rgba(255,255,255,.45);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.12);
+}
+
+#view-friends #add-friend-form button{
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 12px;
+    padding: 10px 16px;
+    min-width: 120px;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.24));
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+#view-friends #add-friend-form button:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+
 .view > :not(h2){
     width: min(900px, 100%);
 }
@@ -335,6 +443,25 @@ main{
 
 .profile_info {
     margin-bottom: 16px;
+}
+
+.profile-rules {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.10);
+}
+
+.profile-rules h3 {
+    margin: 0 0 8px;
+}
+
+.profile-rules ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
 }
 
 #profile-language-btn {
@@ -611,6 +738,22 @@ body.register-page {
         padding-bottom: 24px;
     }
 
+    #view-friends #add-friend-form{
+        grid-template-columns: 1fr;
+    }
+
+    #friend-requests-list li,
+    #friends-list li{
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #friend-requests-list .accept_friend,
+    #friends-list .delete_friend,
+    #view-friends #add-friend-form button{
+        width: 100%;
+    }
+
     .profile_container {
         flex-direction: column;
         align-items: center;
@@ -718,16 +861,60 @@ body.register-page {
     }
 }
 
-#xp-leaderboard-table {
+.leaderboard-card {
     width: min(700px, 100%);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    background: rgba(255,255,255,.1);
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.leaderboard-card > h3 {
+    margin: 0 0 10px;
+}
+
+#leaderboard-table,
+#xp-leaderboard-table {
+    width: 100%;
     border-collapse: collapse;
 }
 
+#leaderboard-table th,
+#leaderboard-table td,
 #xp-leaderboard-table th,
 #xp-leaderboard-table td {
     padding: 8px 10px;
     border-bottom: 1px solid rgba(255,255,255,.25);
     text-align: left;
+}
+
+.leaderboard-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.leaderboard-pagination button {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.3);
+    background: rgba(255,255,255,.16);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.leaderboard-pagination button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.leaderboard-pagination span {
+    min-width: 64px;
+    text-align: center;
 }
 
 #chat-conversations-panel {
@@ -760,7 +947,7 @@ body.register-page {
 }
 
 .xp-top-profile {
-    width: min(700px, 100%);
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 10px;

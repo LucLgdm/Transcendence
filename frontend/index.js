@@ -4,10 +4,14 @@ function getAuthToken() {
     return localStorage.getItem("token");
 }
 const DEFAULT_PROFILE_AVATAR = "./image/image.png";
+const LEADERBOARD_PAGE_SIZE = 10;
 let currentProfileUserId = null;
 let profileAvatarPickerBound = false;
 let selectedXpUser = null;
 let pendingChatTargetUserId = null;
+let cachedLeaderboardStats = [];
+let eloLeaderboardPage = 0;
+let xpLeaderboardPage = 0;
 function refreshTranslations() {
     applyTranslations();
 }
@@ -140,6 +144,22 @@ async function fetchFriends() {
     }
     return res.json();
 }
+async function fetchIncomingFriendRequests() {
+    const token = getAuthToken();
+    if (!token)
+        return [];
+    const res = await fetch(buildApiUrl("/friends/requests"), {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur fetch friend requests", res.status);
+        return [];
+    }
+    return res.json();
+}
 async function fetchChatMess(userId) {
     const token = getAuthToken();
     if (!token)
@@ -204,6 +224,23 @@ async function deleteFriend(friendId) {
     if (!res.ok) {
         console.error("Erreur deleteFriend", res.status);
     }
+}
+async function acceptFriendRequestById(friendId) {
+    const token = getAuthToken();
+    if (!token)
+        return false;
+    const res = await fetch(buildApiUrl(`/friends/${friendId}/accept`), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!res.ok) {
+        console.error("Erreur acceptFriend", res.status);
+        return false;
+    }
+    return true;
 }
 async function podMatch(pload) {
     const token = getAuthToken();
@@ -303,7 +340,97 @@ function bindXpProfileActionButtons() {
         alert(t("message-sent-success"));
     };
 }
-async function renderXpLeaderboard(statsByUser) {
+function getTotalPages(totalEntries) {
+    return Math.max(1, Math.ceil(totalEntries / LEADERBOARD_PAGE_SIZE));
+}
+function paginateEntries(entries, page) {
+    const start = page * LEADERBOARD_PAGE_SIZE;
+    return entries.slice(start, start + LEADERBOARD_PAGE_SIZE);
+}
+function renderLeaderboardPagination() {
+    const eloPrevBtn = document.getElementById("elo-prev-btn");
+    const eloNextBtn = document.getElementById("elo-next-btn");
+    const eloPageInfo = document.getElementById("elo-page-info");
+    const xpPrevBtn = document.getElementById("xp-prev-btn");
+    const xpNextBtn = document.getElementById("xp-next-btn");
+    const xpPageInfo = document.getElementById("xp-page-info");
+    const totalPages = getTotalPages(cachedLeaderboardStats.length);
+    if (eloPageInfo)
+        eloPageInfo.textContent = `${eloLeaderboardPage + 1} / ${totalPages}`;
+    if (xpPageInfo)
+        xpPageInfo.textContent = `${xpLeaderboardPage + 1} / ${totalPages}`;
+    if (eloPrevBtn)
+        eloPrevBtn.disabled = eloLeaderboardPage <= 0;
+    if (eloNextBtn)
+        eloNextBtn.disabled = eloLeaderboardPage >= totalPages - 1;
+    if (xpPrevBtn)
+        xpPrevBtn.disabled = xpLeaderboardPage <= 0;
+    if (xpNextBtn)
+        xpNextBtn.disabled = xpLeaderboardPage >= totalPages - 1;
+}
+function bindLeaderboardPaginationButtons() {
+    const eloPrevBtn = document.getElementById("elo-prev-btn");
+    const eloNextBtn = document.getElementById("elo-next-btn");
+    const xpPrevBtn = document.getElementById("xp-prev-btn");
+    const xpNextBtn = document.getElementById("xp-next-btn");
+    eloPrevBtn.onclick = () => {
+        if (eloLeaderboardPage <= 0)
+            return;
+        eloLeaderboardPage -= 1;
+        renderEloLeaderboard();
+    };
+    eloNextBtn.onclick = () => {
+        const totalPages = getTotalPages(cachedLeaderboardStats.length);
+        if (eloLeaderboardPage >= totalPages - 1)
+            return;
+        eloLeaderboardPage += 1;
+        renderEloLeaderboard();
+    };
+    xpPrevBtn.onclick = () => {
+        if (xpLeaderboardPage <= 0)
+            return;
+        xpLeaderboardPage -= 1;
+        void renderXpLeaderboard();
+    };
+    xpNextBtn.onclick = () => {
+        const totalPages = getTotalPages(cachedLeaderboardStats.length);
+        if (xpLeaderboardPage >= totalPages - 1)
+            return;
+        xpLeaderboardPage += 1;
+        void renderXpLeaderboard();
+    };
+}
+function renderEloLeaderboard() {
+    const leaderboardTable = document.querySelector("#leaderboard-table tbody");
+    if (!leaderboardTable)
+        return;
+    if (cachedLeaderboardStats.length === 0) {
+        leaderboardTable.innerHTML = `
+          <tr>
+            <td colspan="3">${t("leaderboard-empty")}</td>
+          </tr>
+        `;
+        renderLeaderboardPagination();
+        return;
+    }
+    const rankingByElo = [...cachedLeaderboardStats]
+        .sort((a, b) => (b.user.elo ?? 500) - (a.user.elo ?? 500));
+    const totalPages = getTotalPages(rankingByElo.length);
+    if (eloLeaderboardPage > totalPages - 1)
+        eloLeaderboardPage = totalPages - 1;
+    const pageEntries = paginateEntries(rankingByElo, eloLeaderboardPage);
+    leaderboardTable.innerHTML = pageEntries
+        .map((entry) => `
+          <tr>
+            <td>${entry.user.username}</td>
+            <td>${entry.user.elo ?? 500}</td>
+            <td>${t("chess")}</td>
+          </tr>
+        `)
+        .join("");
+    renderLeaderboardPagination();
+}
+async function renderXpLeaderboard() {
     const xpTableBody = document.querySelector("#xp-leaderboard-table tbody");
     const topProfile = document.getElementById("xp-top-profile");
     const topProfileBtn = document.getElementById("xp-top-profile-btn");
@@ -313,24 +440,29 @@ async function renderXpLeaderboard(statsByUser) {
     selectedXpUser = null;
     xpActions.hidden = true;
     topProfile.hidden = true;
-    const stats = statsByUser ?? await fetchUserLeaderboardStats();
+    const stats = cachedLeaderboardStats;
     if (stats.length === 0) {
         xpTableBody.innerHTML = `<tr><td colspan="2">${t("leaderboard-empty")}</td></tr>`;
+        renderLeaderboardPagination();
         return;
     }
     const ranking = stats
         .map((entry) => ({ user: entry.user, xp: entry.xp }))
-        .sort((a, b) => b.xp - a.xp)
-        .slice(0, 20);
+        .sort((a, b) => b.xp - a.xp);
     if (ranking.length === 0) {
         xpTableBody.innerHTML = `<tr><td colspan="2">${t("leaderboard-empty")}</td></tr>`;
+        renderLeaderboardPagination();
         return;
     }
     const topUser = ranking[0].user;
     topProfile.hidden = false;
     topProfileBtn.textContent = `${topUser.username} (#${topUser.id})`;
     topProfileBtn.onclick = () => renderXpProfileActions(topUser);
-    xpTableBody.innerHTML = ranking
+    const totalPages = getTotalPages(ranking.length);
+    if (xpLeaderboardPage > totalPages - 1)
+        xpLeaderboardPage = totalPages - 1;
+    const pageEntries = paginateEntries(ranking, xpLeaderboardPage);
+    xpTableBody.innerHTML = pageEntries
         .map((entry) => `
             <tr>
                 <td><button type="button" class="xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
@@ -347,6 +479,7 @@ async function renderXpLeaderboard(statsByUser) {
                 renderXpProfileActions(user);
         });
     });
+    renderLeaderboardPagination();
 }
 function initViewSwitching() {
     const buttons = document.querySelectorAll('nav button');
@@ -537,18 +670,20 @@ async function initProfile() {
 }
 async function initFriends() {
     const friendsList = document.getElementById("friends-list");
+    const requestsList = document.getElementById("friend-requests-list");
     const addFriendForm = document.getElementById('add-friend-form');
     const addFriendInput = document.getElementById('friend-name');
     if (!friendsList)
         return;
     let friends = [];
+    let requests = [];
     function renderFriends() {
         if (friends.length === 0) {
             friendsList.innerHTML = `<li>${t("friends-empty")}</li>`;
             return;
         }
-        friendsList.innerHTML = friends.map((friend) => `<li ${friend.username} (${friend.email})>
-            <button data_friend_id="${friend.id}" class="delete_friend">${t("delete")}</button>
+        friendsList.innerHTML = friends.map((friend) => `<li>${friend.username} (${friend.email})
+            <button data-friend-id="${friend.id}" class="delete_friend">${t("delete")}</button>
             </li>`).join("");
         friendsList.querySelectorAll('.delete_friend').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -560,8 +695,38 @@ async function initFriends() {
             });
         });
     }
+    function renderRequests() {
+        if (!requestsList)
+            return;
+        if (requests.length === 0) {
+            requestsList.innerHTML = `<li>${t("friend-requests-empty")}</li>`;
+            return;
+        }
+        requestsList.innerHTML = requests
+            .map((request) => `<li>${request.username} (${request.email})
+              <button data-friend-id="${request.id}" class="accept_friend">${t("friend-accept")}</button>
+            </li>`)
+            .join("");
+        requestsList.querySelectorAll(".accept_friend").forEach((button) => {
+            button.addEventListener("click", async () => {
+                const id = Number(button.dataset.friendId);
+                if (Number.isNaN(id))
+                    return;
+                const accepted = await acceptFriendRequestById(id);
+                if (!accepted)
+                    return;
+                friends = await fetchFriends();
+                requests = await fetchIncomingFriendRequests();
+                renderFriends();
+                renderRequests();
+                renderProfileFriends(friends);
+            });
+        });
+    }
     friends = await fetchFriends();
+    requests = await fetchIncomingFriendRequests();
     renderFriends();
+    renderRequests();
     if (addFriendForm && addFriendInput) {
         addFriendForm.onsubmit = async (event) => {
             event.preventDefault();
@@ -577,7 +742,9 @@ async function initFriends() {
             if (!added)
                 return;
             friends = await fetchFriends();
+            requests = await fetchIncomingFriendRequests();
             renderFriends();
+            renderRequests();
             renderProfileFriends(friends);
             addFriendInput.value = "";
         };
@@ -722,31 +889,16 @@ async function initLeaderboard() {
     if (!leaderboardTable)
         return;
     bindXpProfileActionButtons();
+    bindLeaderboardPaginationButtons();
     const statsByUser = await fetchUserLeaderboardStats();
-    if (statsByUser.length === 0) {
-        leaderboardTable.innerHTML = `
-        <tr>
-          <td colspan="3">${t("leaderboard-empty")}</td>
-        </tr>
-      `;
-        await renderXpLeaderboard([]);
-        return;
-    }
-    const rankingByWins = [...statsByUser]
-        .sort((a, b) => (b.user.elo ?? 500) - (a.user.elo ?? 500))
-        .slice(0, 20);
-    leaderboardTable.innerHTML = rankingByWins
-        .map((entry) => {
-        return `
-          <tr>
-            <td>${entry.user.username}</td>
-            <td>${entry.user.elo ?? 500}</td>
-            <td>${t("chess")}</td>
-          </tr>
-        `;
-    })
-        .join("");
-    await renderXpLeaderboard(statsByUser);
+    cachedLeaderboardStats = statsByUser;
+    const totalPages = getTotalPages(cachedLeaderboardStats.length);
+    if (eloLeaderboardPage > totalPages - 1)
+        eloLeaderboardPage = totalPages - 1;
+    if (xpLeaderboardPage > totalPages - 1)
+        xpLeaderboardPage = totalPages - 1;
+    renderEloLeaderboard();
+    await renderXpLeaderboard();
 }
 function initMatchForm() {
     const form = document.getElementById('match-form');

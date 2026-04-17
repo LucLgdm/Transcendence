@@ -63,4 +63,5 @@ Friendship.init( {
 
 User.hasMany(Friendship, { foreignKey: 'userId', as: 'friends' });
 Friendship.belongsTo(User, { foreignKey: 'friendId', as: 'friend' });
+Friendship.belongsTo(User, { foreignKey: 'userId', as: 'requester' });
 export default Friendship;

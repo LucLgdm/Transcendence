@@ -2,6 +2,7 @@ import { Router } from "express";
 import { auth, AuthRequest } from "../middleware";
 import User from "../models/User";
 import Friendship from "../models/Friendship";
+import { Op } from "sequelize";
 
 const FriendRoute = Router();
 
@@ -21,15 +22,29 @@ FriendRoute.post("/:id",  auth, async (req: AuthRequest, res) => {
 
         const existing = await Friendship.findOne({
             where: {
-                userId: currentUseId, friendId }
-            });
+                [Op.or]: [
+                    { userId: currentUseId, friendId },
+                    { userId: friendId, friendId: currentUseId },
+                ],
+            },
+        });
         if (existing) {
-            return res.status(400).json({error: "vous etes deja amis"});
+            if (existing.status === "accepter") {
+                return res.status(400).json({error: "vous etes deja amis"});
+            }
+
+            if (existing.userId === friendId && existing.friendId === currentUseId) {
+                existing.status = "accepter";
+                await existing.save();
+                return res.status(200).json(existing);
+            }
+
+            return res.status(400).json({ error: "demande d'ami déjà envoyée" });
         }
 
         const friendship = await Friendship.create({
             userId: currentUseId, friendId,
-            status: "accepter",
+            status: "attente",
         });
 
         res.status(201).json(friendship);
@@ -94,29 +109,67 @@ FriendRoute.get("/", auth, async (req: AuthRequest, res) => {
         const currentUserId = req.user!.id;
         const friendships = await Friendship.findAll({
             where: {
-                userId: currentUserId,
+                [Op.or]: [
+                    { userId: currentUserId },
+                    { friendId: currentUserId },
+                ],
                 status: "accepter",
+            },
+        });
+
+        const friendIds = [...new Set(friendships.map((friendship) =>
+            friendship.userId === currentUserId ? friendship.friendId : friendship.userId
+        ))];
+
+        if (friendIds.length === 0) {
+            return res.json([]);
+        }
+
+        const users = await User.findAll({
+            where: { id: friendIds },
+            attributes: ["id", "username", "email"],
+        });
+
+        const friends = users.map((friend) => ({
+            id: friend.id,
+            username: friend.username,
+            email: friend.email,
+        }));
+        res.json(friends);
+    } catch (err) {
+        res.status(500).json({error:"Erreur"});
+    }
+});
+
+FriendRoute.get("/requests", auth, async (req: AuthRequest, res) => {
+    try {
+        const currentUserId = req.user!.id;
+        const incomingRequests = await Friendship.findAll({
+            where: {
+                friendId: currentUserId,
+                status: "attente",
             },
             include: [
                 {
                     model: User,
-                    as: "friend",
+                    as: "requester",
                     attributes: ["id", "username", "email"],
                 },
             ],
         });
 
-        const friends = friendships
-            .map((friendship) => friendship.get("friend") as User | null)
-            .filter((friend): friend is User => Boolean(friend))
-            .map((friend) => ({
-                id: friend.id,
-                username: friend.username,
-                email: friend.email,
+        const requests = incomingRequests
+            .map((friendship) => friendship.get("requester") as User | null)
+            .filter((user): user is User => Boolean(user))
+            .map((user) => ({
+                id: user.id,
+                username: user.username,
+                email: user.email,
             }));
-        res.json(friends);
-    } catch (err) {
-        res.status(500).json({error:"Erreur"});
+
+        res.json(requests);
+    } catch (error) {
+        res.status(500).json({ error: "erreur lors de la récupération des demandes d'amis" });
     }
 });
 
