@@ -5,7 +5,7 @@ const PASSWORD_MAX = 128;
 const LOGIN_USERNAME_MAX = 128;
 
 /** Identique aux clés i18n côté frontend pour affichage cohérent */
-const USERNAME_RE = /^[a-zA-Z0-9_-]+$/;
+const USERNAME_RE = /^[-a-zA-Z0-9_]+$/;
 
 /** Pseudo pour recherche profil (mêmes règles que l’inscription). */
 export function isValidLookupUsername(raw: string): boolean {

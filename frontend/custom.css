@@ -8,6 +8,28 @@
     --panel-solid: #8ccfe6;
 }
 
+html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
 html,
 body {
     height: 100%;
@@ -626,4 +648,69 @@ body.register-page {
     #chat-messages {
         max-height: 220px !important;
     }
+}
+
+/* Pied de page fixe : lien confidentialité (toutes les pages) */
+body.has-site-footer {
+    padding-bottom: 2.75rem;
+}
+
+.app-site-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    background: rgba(15, 48, 68, 0.92);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.app-site-footer__link {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.app-site-footer__link:hover {
+    color: #fff;
+    text-decoration: underline !important;
+}
+
+.app-site-footer--on-light {
+    background: #f0f0f0;
+    border-top-color: #ccc;
+}
+
+.app-site-footer--on-light .app-site-footer__link {
+    color: #111;
+}
+
+.app-site-footer--on-light .app-site-footer__link:hover {
+    color: #000;
+}
+
+/* Page confidentialité : texte noir sur fond blanc */
+body.privacy-simple-body {
+    margin: 0;
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body.privacy-simple-body .privacy-simple-header {
+    background: #fff;
+    border-bottom-color: #ccc !important;
+    color: #111;
+}
+
+body.privacy-simple-body .privacy-simple-main {
+    color: #111;
+}
+
+body.privacy-simple-body .privacy-simple-main h1,
+body.privacy-simple-body .privacy-simple-main h2,
+body.privacy-simple-body .privacy-simple-main h3 {
+    color: #111;
 }

@@ -37,10 +37,8 @@ if (registerForm && newUserName && newEmail && newPassword) {
             const error = await response.json().catch(() => ({ error: "unknown-error" }));
             const errMsg = typeof error.error === "string" ? error.error : "register-failed";
             alert(t(errMsg));
-            console.error("Erreur:", error);
         }
-        catch (error) {
-            console.error("Erreur réseau:", error);
+        catch {
             alert(t("network-register-error"));
         }
     });

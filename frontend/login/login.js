@@ -19,7 +19,6 @@ if (tokenFromUrl) {
     window.location.href = "./index.html";
 }
 else if (errorFromUrl) {
-    console.error("OAuth 42 error:", errorFromUrl);
     alert(`${t("oauth-failed")}: ${errorFromUrl}`);
 }
 if (form && usernameInput && passwordInput) {
@@ -53,8 +52,7 @@ if (form && usernameInput && passwordInput) {
             const errMsg = typeof error.error === "string" ? error.error : "login-failed";
             alert(t(errMsg));
         }
-        catch (error) {
-            console.error("Erreur réseau:", error);
+        catch {
             alert(t("network-login-error"));
         }
     });

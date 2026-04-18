@@ -11,6 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler"
   },
-  "include": ["*.ts", "api/api.ts", "chess/chess.ts", "pong/**/*.ts", "auth/auth-session.ts", "auth/auth-validation.ts", "auth/fetch-auth-guard.ts", "login/login.ts", "register/register.ts", "i18n/**/*.ts"],
+  "include": ["*.ts", "api/api.ts", "chess/chess.ts", "pong/**/*.ts", "auth/auth-session.ts", "auth/auth-validation.ts", "auth/fetch-auth-guard.ts", "login/login.ts", "register/register.ts", "privacy/privacy.ts", "terms/terms.ts", "i18n/**/*.ts"],
   "exclude": ["node_modules"]
 }

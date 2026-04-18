@@ -4,7 +4,7 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 const LOGIN_USERNAME_MAX = 128;
 
-const USERNAME_RE = /^[a-zA-Z0-9_-]+$/;
+const USERNAME_RE = /^[-a-zA-Z0-9_]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type RegisterFieldResult =

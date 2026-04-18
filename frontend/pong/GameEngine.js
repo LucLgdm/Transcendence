@@ -71,8 +71,8 @@ export class GameEngine {
         if (this.settings.powerUpsEnabled) {
             this.powerUpIntervalId = setInterval(() => this.triggerPowerUp(), GAME_CONFIG.POWERUP.SPAWN_INTERVAL_MS);
         }
-        window.addEventListener('keydown', this.boundKeyDown);
-        window.addEventListener('keyup', this.boundKeyUp);
+        window.addEventListener('keydown', this.boundKeyDown, GameEngine.keyListenerOpts);
+        window.addEventListener('keyup', this.boundKeyUp, GameEngine.keyListenerOpts);
         this.gameLoop();
     }
     dispose() {
@@ -81,8 +81,8 @@ export class GameEngine {
             cancelAnimationFrame(this.rafId);
             this.rafId = null;
         }
-        window.removeEventListener('keydown', this.boundKeyDown);
-        window.removeEventListener('keyup', this.boundKeyUp);
+        window.removeEventListener('keydown', this.boundKeyDown, GameEngine.keyListenerOpts);
+        window.removeEventListener('keyup', this.boundKeyUp, GameEngine.keyListenerOpts);
         if (this.powerUpIntervalId !== null) {
             clearInterval(this.powerUpIntervalId);
             this.powerUpIntervalId = null;
@@ -188,6 +188,7 @@ export class GameEngine {
         setPongCanvasPlaying(false);
     }
 }
+GameEngine.keyListenerOpts = { passive: true };
 let pongInstance = null;
 let pongMenuListenersBound = false;
 function setPongCanvasPlaying(playing) {

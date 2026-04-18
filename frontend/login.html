@@ -5,8 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title data-i18n="login-page-title">Connexion</title>
 	<link rel="icon" href="favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="custom.css">
 </head>
-<body>
+<body class="has-site-footer">
 	<h1 data-i18n="login-page-title">Connexion</h1>
 
 		<form id="loginForm">
@@ -28,13 +29,15 @@
 					Connect with 42
 				</a>
 			<br>
-			<button
-				id = "createAccountBtn"
-				type="button"
-				onclick="window.location.href='register.html'">
+			<button id="createAccountBtn" type="button">
 				<span data-i18n="create-account">Créer un compte</span>
 			</button>
 		</form>
+
+	<footer class="app-site-footer d-flex flex-wrap justify-content-center gap-3" role="contentinfo">
+		<a href="./privacy.html" class="app-site-footer__link text-decoration-none" data-i18n="footer-privacy">Politique de confidentialité</a>
+		<a href="./terms.html" class="app-site-footer__link text-decoration-none" data-i18n="footer-terms">Conditions d'utilisation</a>
+	</footer>
 
 	<script>
 		(function () {

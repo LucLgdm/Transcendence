@@ -3,6 +3,10 @@ import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
 import { disposePongIfAny, initPong } from "./pong/GameEngine.js";
+import { setConsoleFunction } from "three";
+
+setConsoleFunction(() => undefined);
+
 type UserSummary = {
     id: number;
     username: string;
@@ -23,6 +27,15 @@ type UserLeaderboardStats = {
 
 function getAuthToken(): string | null {
     return localStorage.getItem("token");
+}
+
+function escapeHtml(raw: string): string {
+    return raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 const DEFAULT_PROFILE_AVATAR = "./image/default_profile_picture.png";
@@ -205,7 +218,6 @@ async function fetchUserMatches(userId: number): Promise<Match[]> {
     });
   
     if (!res.ok) {
-      console.error("Erreur fetch matches", res.status);
       return [];
     }
   
@@ -224,7 +236,6 @@ async function fetchFriends(): Promise<Friend[]> {
   });
 
   if (!res.ok) {
-    console.error("Erreur fetch friends", res.status);
     return [];
   }
 
@@ -243,7 +254,6 @@ async function fetchIncomingFriendRequests(): Promise<Friend[]> {
   });
 
   if (!res.ok) {
-    console.error("Erreur fetch friend requests", res.status);
     return [];
   }
 
@@ -262,7 +272,6 @@ async function fetchChatMess(userId: number): Promise<ChatMessage[]> {
     });
 
     if (!res.ok) {
-        console.error("Erreur fetch chat messages", res.status);
         return [];
     }
     return res.json();
@@ -281,7 +290,6 @@ async function sendChatMessage(userId: number, content: string): Promise<boolean
         body: JSON.stringify({content}),
     });
     if (!res.ok) {
-        console.error("Erreur sendChatMessage", res.status);
         return false;
     }
     return true;
@@ -300,7 +308,6 @@ async function addFriendById(friendId: number): Promise<boolean> {
   });
 
   if (!res.ok) {
-    console.error("Erreur addFriend", res.status);
     return false;
   }
   return true;
@@ -317,9 +324,7 @@ async function deleteFriend(friendId: number): Promise<void> {
     },
   });
 
-  if (!res.ok) {
-    console.error("Erreur deleteFriend", res.status);
-  }
+  if (!res.ok) return;
 }
 
 async function acceptFriendRequestById(friendId: number): Promise<boolean> {
@@ -335,7 +340,6 @@ async function acceptFriendRequestById(friendId: number): Promise<boolean> {
   });
 
   if (!res.ok) {
-    console.error("Erreur acceptFriend", res.status);
     return false;
   }
   return true;
@@ -373,7 +377,6 @@ async function podMatch(pload: {
 async function fetchUsers(): Promise<UserSummary[]> {
     const res = await fetch(buildApiUrl("/users"));
     if (!res.ok) {
-        console.error("Erreur fetch users", res.status);
         return [];
     }
     return res.json();
@@ -456,15 +459,26 @@ function renderXpProfileActions(user: UserSummary, trigger?: HTMLElement): void 
         requestAnimationFrame(() => {
             requestAnimationFrame(reposition);
         });
-        const onScrollOrResize = (): void => {
-            reposition();
+        let repositionScrollRaf = 0;
+        const scheduleReposition = (): void => {
+            if (repositionScrollRaf !== 0) return;
+            repositionScrollRaf = requestAnimationFrame(() => {
+                repositionScrollRaf = 0;
+                reposition();
+            });
         };
+        const onScrollOrResize = (): void => {
+            scheduleReposition();
+        };
+        const scrollListenerOpts: AddEventListenerOptions = { capture: true, passive: true };
+        const pointerListenerOpts: AddEventListenerOptions = { capture: true, passive: true };
+        const keydownListenerOpts: AddEventListenerOptions = { passive: true };
         window.addEventListener("resize", onScrollOrResize);
-        window.addEventListener("scroll", onScrollOrResize, true);
+        window.addEventListener("scroll", onScrollOrResize, scrollListenerOpts);
         const onEscape = (e: KeyboardEvent): void => {
             if (e.key === "Escape") hideXpProfileActions();
         };
-        document.addEventListener("keydown", onEscape);
+        document.addEventListener("keydown", onEscape, keydownListenerOpts);
         const onPointerDown = (e: PointerEvent): void => {
             const target = e.target as Node;
             if (actions.contains(target) || trigger.contains(target)) return;
@@ -472,17 +486,21 @@ function renderXpProfileActions(user: UserSummary, trigger?: HTMLElement): void 
         };
         let pointerDownAttached = false;
         const pointerTimeout = window.setTimeout(() => {
-            document.addEventListener("pointerdown", onPointerDown, true);
+            document.addEventListener("pointerdown", onPointerDown, pointerListenerOpts);
             pointerDownAttached = true;
         }, 0);
         disposeXpProfilePopover = (): void => {
             window.clearTimeout(pointerTimeout);
+            if (repositionScrollRaf !== 0) {
+                cancelAnimationFrame(repositionScrollRaf);
+                repositionScrollRaf = 0;
+            }
             if (pointerDownAttached) {
-                document.removeEventListener("pointerdown", onPointerDown, true);
+                document.removeEventListener("pointerdown", onPointerDown, pointerListenerOpts);
             }
             window.removeEventListener("resize", onScrollOrResize);
-            window.removeEventListener("scroll", onScrollOrResize, true);
-            document.removeEventListener("keydown", onEscape);
+            window.removeEventListener("scroll", onScrollOrResize, scrollListenerOpts);
+            document.removeEventListener("keydown", onEscape, keydownListenerOpts);
         };
     } else {
         actions.classList.remove("xp-profile-actions--popover");
@@ -632,7 +650,7 @@ function renderEloLeaderboard(): void {
     leaderboardTable.innerHTML = pageEntries
         .map((entry) => `
           <tr>
-            <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn elo-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+            <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn elo-row-profile" data-user-id="${entry.user.id}">${escapeHtml(entry.user.username)}</button></td>
             <td>${entry.user.elo ?? 500}</td>
             <td>${t("chess")}</td>
           </tr>
@@ -692,7 +710,7 @@ async function renderXpLeaderboard(): Promise<void> {
     xpTableBody.innerHTML = pageEntries
         .map((entry) => `
             <tr>
-                <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+                <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${escapeHtml(entry.user.username)}</button></td>
                 <td>${entry.xp}</td>
             </tr>
         `)
@@ -899,13 +917,14 @@ async function initProfile(opts?: { fetchUsername?: string }): Promise<void> {
       setProfileLogoutButtonVisible(!viewingOther);
 
       const creationDateValue = user.createdAt ?? user.createdAT;
+      const creationDateLabel = creationDateValue
+          ? escapeHtml(new Date(creationDateValue).toLocaleDateString())
+          : "N/A";
       profileInfo.innerHTML = `
-        <p>${t("profile-username")}: ${user.username}</p>
-        <p>${t("profile-email")}: ${user.email}</p>
+        <p>${t("profile-username")}: ${escapeHtml(user.username)}</p>
+        <p>${t("profile-email")}: ${escapeHtml(user.email)}</p>
         <p>${t("score")}: ${user.elo ?? 500}</p>
-        <p>${t("profile-created-at")}: ${
-          creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"
-        }</p>
+        <p>${t("profile-created-at")}: ${creationDateLabel}</p>
         <button id="profile-language-btn" type="button" class="btn btn-outline-light btn-sm">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
         ${
           viewingOther
@@ -1003,13 +1022,13 @@ async function initProfile(opts?: { fetchUsername?: string }): Promise<void> {
   
               const adversaireId =
                 m.player1ID === displayUserId ? m.player2ID : m.player1ID;
-              const adversaireName = usernamesById.get(adversaireId) ?? `#${adversaireId}`;
+              const adversaireName = escapeHtml(usernamesById.get(adversaireId) ?? `#${adversaireId}`);
               const eloDelta = m.winnerID === null ? 0 : (m.winnerID === displayUserId ? 10 : -10);
               const formattedEloDelta = eloDelta > 0 ? `+${eloDelta}` : String(eloDelta);
   
               return `<li>
-                [${m.game}] ${result} ${t("profile-match-vs-player")} ${adversaireName}
-                (${t("score")}: ${formattedEloDelta}) ${t("profile-match-on")} ${date}
+                [${escapeHtml(m.game)}] ${result} ${t("profile-match-vs-player")} ${adversaireName}
+                (${t("score")}: ${formattedEloDelta}) ${t("profile-match-on")} ${escapeHtml(date)}
               </li>`;
             })
             .join("");
@@ -1024,7 +1043,6 @@ async function initProfile(opts?: { fetchUsername?: string }): Promise<void> {
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;
       }
-      console.error("Erreur de récupération du profil:", error);
     }
 }
 
@@ -1044,7 +1062,7 @@ async function initFriends(): Promise<void> {
             friendsList!.innerHTML = `<li>${t("friends-empty")}</li>`;
             return;
         }
-        friendsList!.innerHTML = friends.map((friend) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${friend.username} (${friend.email})
+        friendsList!.innerHTML = friends.map((friend) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${escapeHtml(friend.username)} (${escapeHtml(friend.email)})
             <button type="button" data-friend-id="${friend.id}" class="btn btn-sm btn-outline-light delete_friend">${t("delete")}</button>
             </li>`).join("");
 
@@ -1068,7 +1086,7 @@ async function initFriends(): Promise<void> {
         }
 
         requestsList.innerHTML = requests
-            .map((request) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${request.username} (${request.email})
+            .map((request) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${escapeHtml(request.username)} (${escapeHtml(request.email)})
               <button type="button" data-friend-id="${request.id}" class="btn btn-sm btn-light accept_friend">${t("friend-accept")}</button>
             </li>`)
             .join("");
@@ -1126,7 +1144,7 @@ function renderProfileFriends(friends: Friend[]): void {
     profileFriendsList.innerHTML =
       friends.length === 0
         ? `<li>${t("friends-empty")}</li>`
-        : friends.map((f) => `<li>${f.username} (${f.email})</li>`).join("");
+        : friends.map((f) => `<li>${escapeHtml(f.username)} (${escapeHtml(f.email)})</li>`).join("");
   }
 
   function initChat(): void {
@@ -1155,12 +1173,19 @@ function renderProfileFriends(friends: Friend[]): void {
           ? `<p>${t("chat-empty")}</p>`
           : messages
               .map(
-                (m) => `
+                (m) => {
+                  const author = escapeHtml(usernames.get(m.senderId) ?? `#${m.senderId}`);
+                  const body = escapeHtml(m.content);
+                  const timeLabel = escapeHtml(
+                      new Date(m.createdAt ?? m.createdTimer ?? Date.now()).toLocaleTimeString(),
+                  );
+                  return `
                 <div class="message">
-                  <strong>${usernames.get(m.senderId) ?? `#${m.senderId}`}</strong> : ${m.content}
-                  <small>${new Date(m.createdAt ?? m.createdTimer ?? Date.now()).toLocaleTimeString()}</small>
+                  <strong>${author}</strong> : ${body}
+                  <small>${timeLabel}</small>
                 </div>
-              `
+              `;
+                },
               )
               .join("");
   
@@ -1204,10 +1229,10 @@ function renderProfileFriends(friends: Friend[]): void {
 
       chatConversationsRoot.innerHTML = started
         .map((conversation) => {
-          const preview = conversation.lastMessage?.content ?? "";
+          const preview = escapeHtml(conversation.lastMessage?.content ?? "");
           return `
             <button type="button" class="btn chat-conversation-btn" data-user-id="${conversation.id}">
-              <strong>${conversation.username}</strong>
+              <strong>${escapeHtml(conversation.username)}</strong>
               <div>${preview}</div>
             </button>
           `;
@@ -1306,7 +1331,7 @@ function initProfileFriends(): void {
 
     profileFriendsList.innerHTML =
       friends.length > 0
-        ? friends.map((friend) => `<li>${friend}</li>`).join("")
+        ? friends.map((friend) => `<li>${escapeHtml(friend)}</li>`).join("")
         : `<li>${t("friends-empty")}</li>`;
 }
 

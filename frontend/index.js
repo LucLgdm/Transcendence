@@ -2,8 +2,18 @@ import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
 import { disposePongIfAny, initPong } from "./pong/GameEngine.js";
+import { setConsoleFunction } from "three";
+setConsoleFunction(() => undefined);
 function getAuthToken() {
     return localStorage.getItem("token");
+}
+function escapeHtml(raw) {
+    return raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 const DEFAULT_PROFILE_AVATAR = "./image/default_profile_picture.png";
 const LEADERBOARD_PAGE_SIZE = 10;
@@ -178,7 +188,6 @@ async function fetchUserMatches(userId) {
         },
     });
     if (!res.ok) {
-        console.error("Erreur fetch matches", res.status);
         return [];
     }
     return res.json();
@@ -194,7 +203,6 @@ async function fetchFriends() {
         },
     });
     if (!res.ok) {
-        console.error("Erreur fetch friends", res.status);
         return [];
     }
     return res.json();
@@ -210,7 +218,6 @@ async function fetchIncomingFriendRequests() {
         },
     });
     if (!res.ok) {
-        console.error("Erreur fetch friend requests", res.status);
         return [];
     }
     return res.json();
@@ -226,7 +233,6 @@ async function fetchChatMess(userId) {
         }
     });
     if (!res.ok) {
-        console.error("Erreur fetch chat messages", res.status);
         return [];
     }
     return res.json();
@@ -244,7 +250,6 @@ async function sendChatMessage(userId, content) {
         body: JSON.stringify({ content }),
     });
     if (!res.ok) {
-        console.error("Erreur sendChatMessage", res.status);
         return false;
     }
     return true;
@@ -261,7 +266,6 @@ async function addFriendById(friendId) {
         },
     });
     if (!res.ok) {
-        console.error("Erreur addFriend", res.status);
         return false;
     }
     return true;
@@ -276,9 +280,8 @@ async function deleteFriend(friendId) {
             "Authorization": `Bearer ${token}`,
         },
     });
-    if (!res.ok) {
-        console.error("Erreur deleteFriend", res.status);
-    }
+    if (!res.ok)
+        return;
 }
 async function acceptFriendRequestById(friendId) {
     const token = getAuthToken();
@@ -292,7 +295,6 @@ async function acceptFriendRequestById(friendId) {
         },
     });
     if (!res.ok) {
-        console.error("Erreur acceptFriend", res.status);
         return false;
     }
     return true;
@@ -322,7 +324,6 @@ async function podMatch(pload) {
 async function fetchUsers() {
     const res = await fetch(buildApiUrl("/users"));
     if (!res.ok) {
-        console.error("Erreur fetch users", res.status);
         return [];
     }
     return res.json();
@@ -398,16 +399,28 @@ function renderXpProfileActions(user, trigger) {
         requestAnimationFrame(() => {
             requestAnimationFrame(reposition);
         });
-        const onScrollOrResize = () => {
-            reposition();
+        let repositionScrollRaf = 0;
+        const scheduleReposition = () => {
+            if (repositionScrollRaf !== 0)
+                return;
+            repositionScrollRaf = requestAnimationFrame(() => {
+                repositionScrollRaf = 0;
+                reposition();
+            });
         };
+        const onScrollOrResize = () => {
+            scheduleReposition();
+        };
+        const scrollListenerOpts = { capture: true, passive: true };
+        const pointerListenerOpts = { capture: true, passive: true };
+        const keydownListenerOpts = { passive: true };
         window.addEventListener("resize", onScrollOrResize);
-        window.addEventListener("scroll", onScrollOrResize, true);
+        window.addEventListener("scroll", onScrollOrResize, scrollListenerOpts);
         const onEscape = (e) => {
             if (e.key === "Escape")
                 hideXpProfileActions();
         };
-        document.addEventListener("keydown", onEscape);
+        document.addEventListener("keydown", onEscape, keydownListenerOpts);
         const onPointerDown = (e) => {
             const target = e.target;
             if (actions.contains(target) || trigger.contains(target))
@@ -416,17 +429,21 @@ function renderXpProfileActions(user, trigger) {
         };
         let pointerDownAttached = false;
         const pointerTimeout = window.setTimeout(() => {
-            document.addEventListener("pointerdown", onPointerDown, true);
+            document.addEventListener("pointerdown", onPointerDown, pointerListenerOpts);
             pointerDownAttached = true;
         }, 0);
         disposeXpProfilePopover = () => {
             window.clearTimeout(pointerTimeout);
+            if (repositionScrollRaf !== 0) {
+                cancelAnimationFrame(repositionScrollRaf);
+                repositionScrollRaf = 0;
+            }
             if (pointerDownAttached) {
-                document.removeEventListener("pointerdown", onPointerDown, true);
+                document.removeEventListener("pointerdown", onPointerDown, pointerListenerOpts);
             }
             window.removeEventListener("resize", onScrollOrResize);
-            window.removeEventListener("scroll", onScrollOrResize, true);
-            document.removeEventListener("keydown", onEscape);
+            window.removeEventListener("scroll", onScrollOrResize, scrollListenerOpts);
+            document.removeEventListener("keydown", onEscape, keydownListenerOpts);
         };
     }
     else {
@@ -579,7 +596,7 @@ function renderEloLeaderboard() {
     leaderboardTable.innerHTML = pageEntries
         .map((entry) => `
           <tr>
-            <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn elo-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+            <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn elo-row-profile" data-user-id="${entry.user.id}">${escapeHtml(entry.user.username)}</button></td>
             <td>${entry.user.elo ?? 500}</td>
             <td>${t("chess")}</td>
           </tr>
@@ -632,7 +649,7 @@ async function renderXpLeaderboard() {
     xpTableBody.innerHTML = pageEntries
         .map((entry) => `
             <tr>
-                <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+                <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${escapeHtml(entry.user.username)}</button></td>
                 <td>${entry.xp}</td>
             </tr>
         `)
@@ -811,11 +828,14 @@ async function initProfile(opts) {
             : pathUsername !== null && pathUsername.length > 0;
         setProfileLogoutButtonVisible(!viewingOther);
         const creationDateValue = user.createdAt ?? user.createdAT;
+        const creationDateLabel = creationDateValue
+            ? escapeHtml(new Date(creationDateValue).toLocaleDateString())
+            : "N/A";
         profileInfo.innerHTML = `
-        <p>${t("profile-username")}: ${user.username}</p>
-        <p>${t("profile-email")}: ${user.email}</p>
+        <p>${t("profile-username")}: ${escapeHtml(user.username)}</p>
+        <p>${t("profile-email")}: ${escapeHtml(user.email)}</p>
         <p>${t("score")}: ${user.elo ?? 500}</p>
-        <p>${t("profile-created-at")}: ${creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"}</p>
+        <p>${t("profile-created-at")}: ${creationDateLabel}</p>
         <button id="profile-language-btn" type="button" class="btn btn-outline-light btn-sm">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
         ${viewingOther
             ? `<div class="d-flex flex-wrap gap-2 mt-2">
@@ -916,12 +936,12 @@ async function initProfile(opts) {
                         result = t("profile-match-loss");
                     }
                     const adversaireId = m.player1ID === displayUserId ? m.player2ID : m.player1ID;
-                    const adversaireName = usernamesById.get(adversaireId) ?? `#${adversaireId}`;
+                    const adversaireName = escapeHtml(usernamesById.get(adversaireId) ?? `#${adversaireId}`);
                     const eloDelta = m.winnerID === null ? 0 : (m.winnerID === displayUserId ? 10 : -10);
                     const formattedEloDelta = eloDelta > 0 ? `+${eloDelta}` : String(eloDelta);
                     return `<li>
-                [${m.game}] ${result} ${t("profile-match-vs-player")} ${adversaireName}
-                (${t("score")}: ${formattedEloDelta}) ${t("profile-match-on")} ${date}
+                [${escapeHtml(m.game)}] ${result} ${t("profile-match-vs-player")} ${adversaireName}
+                (${t("score")}: ${formattedEloDelta}) ${t("profile-match-on")} ${escapeHtml(date)}
               </li>`;
                 })
                     .join("");
@@ -938,7 +958,6 @@ async function initProfile(opts) {
         if (avatarImg) {
             avatarImg.src = DEFAULT_PROFILE_AVATAR;
         }
-        console.error("Erreur de récupération du profil:", error);
     }
 }
 async function initFriends() {
@@ -955,7 +974,7 @@ async function initFriends() {
             friendsList.innerHTML = `<li>${t("friends-empty")}</li>`;
             return;
         }
-        friendsList.innerHTML = friends.map((friend) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${friend.username} (${friend.email})
+        friendsList.innerHTML = friends.map((friend) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${escapeHtml(friend.username)} (${escapeHtml(friend.email)})
             <button type="button" data-friend-id="${friend.id}" class="btn btn-sm btn-outline-light delete_friend">${t("delete")}</button>
             </li>`).join("");
         friendsList.querySelectorAll('.delete_friend').forEach(btn => {
@@ -976,7 +995,7 @@ async function initFriends() {
             return;
         }
         requestsList.innerHTML = requests
-            .map((request) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${request.username} (${request.email})
+            .map((request) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${escapeHtml(request.username)} (${escapeHtml(request.email)})
               <button type="button" data-friend-id="${request.id}" class="btn btn-sm btn-light accept_friend">${t("friend-accept")}</button>
             </li>`)
             .join("");
@@ -1030,7 +1049,7 @@ function renderProfileFriends(friends) {
     profileFriendsList.innerHTML =
         friends.length === 0
             ? `<li>${t("friends-empty")}</li>`
-            : friends.map((f) => `<li>${f.username} (${f.email})</li>`).join("");
+            : friends.map((f) => `<li>${escapeHtml(f.username)} (${escapeHtml(f.email)})</li>`).join("");
 }
 function initChat() {
     const messagesContainer = document.getElementById("chat-messages");
@@ -1053,12 +1072,17 @@ function initChat() {
             messages.length === 0
                 ? `<p>${t("chat-empty")}</p>`
                 : messages
-                    .map((m) => `
+                    .map((m) => {
+                    const author = escapeHtml(usernames.get(m.senderId) ?? `#${m.senderId}`);
+                    const body = escapeHtml(m.content);
+                    const timeLabel = escapeHtml(new Date(m.createdAt ?? m.createdTimer ?? Date.now()).toLocaleTimeString());
+                    return `
                 <div class="message">
-                  <strong>${usernames.get(m.senderId) ?? `#${m.senderId}`}</strong> : ${m.content}
-                  <small>${new Date(m.createdAt ?? m.createdTimer ?? Date.now()).toLocaleTimeString()}</small>
+                  <strong>${author}</strong> : ${body}
+                  <small>${timeLabel}</small>
                 </div>
-              `)
+              `;
+                })
                     .join("");
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -1094,10 +1118,10 @@ function initChat() {
         }
         chatConversationsRoot.innerHTML = started
             .map((conversation) => {
-            const preview = conversation.lastMessage?.content ?? "";
+            const preview = escapeHtml(conversation.lastMessage?.content ?? "");
             return `
             <button type="button" class="btn chat-conversation-btn" data-user-id="${conversation.id}">
-              <strong>${conversation.username}</strong>
+              <strong>${escapeHtml(conversation.username)}</strong>
               <div>${preview}</div>
             </button>
           `;
@@ -1192,7 +1216,7 @@ function initProfileFriends() {
     const friends = JSON.parse(localStorage.getItem('friends') || '[]');
     profileFriendsList.innerHTML =
         friends.length > 0
-            ? friends.map((friend) => `<li>${friend}</li>`).join("")
+            ? friends.map((friend) => `<li>${escapeHtml(friend)}</li>`).join("")
             : `<li>${t("friends-empty")}</li>`;
 }
 function initSidebarToggle() {
