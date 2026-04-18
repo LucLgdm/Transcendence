@@ -15,7 +15,6 @@ Application web multijoueur permettant de jouer à Pong et aux échecs en temps 
 * [Organisation de l’équipe](#organisation-de-léquipe)
 * [Documentation](#documentation)
 * [Utilisation de l’IA](#utilisation-de-lia)
-* [Notes](#notes)
 
 ---
 
