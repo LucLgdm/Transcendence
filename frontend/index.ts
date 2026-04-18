@@ -3,8 +3,6 @@ import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
 import { disposePongIfAny, initPong } from "./pong/GameEngine.js";
-import { initTournaments, refreshTournamentsView } from "./tournament/tournaments.js";
-
 type UserSummary = {
     id: number;
     username: string;
@@ -77,7 +75,6 @@ function initProfileLogout(): void {
         void initProfile();
         void initLeaderboard();
         void initFriends();
-        void refreshTournamentsView();
     });
 }
 
@@ -720,7 +717,7 @@ function initViewSwitching(): void {
     const gamesContent = document.getElementById("games-content");
     const chessContainer = document.getElementById("chess-container");
     const pongContainer = document.getElementById("pong-container");
-    const protectedViews = new Set(["profile", "friends", "chat", "tournaments"]);
+    const protectedViews = new Set(["profile", "friends", "chat"]);
 
     function isAuthenticated(): boolean {
         return Boolean(getAuthToken());
@@ -776,7 +773,6 @@ function initViewSwitching(): void {
             void initProfile(u ? { fetchUsername: u } : undefined);
         }
         if (target === "games") showGamesChoice();
-        if (target === "tournaments") void refreshTournamentsView();
     }
 
     window.addEventListener("app-open-profile", ((ev: Event) => {
@@ -1293,7 +1289,6 @@ function main(): void {
     initChat();
     initGames();
     initLeaderboard();
-    initTournaments();
     initSidebarToggle();
 }
 

@@ -718,8 +718,10 @@ async function joinOnlineGame(gameId, password) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId: getCurrentPlayerIdentity(), password: password.trim() }),
     });
-    if (!response.ok)
-        return alert(await readApiError(response, "Impossible de rejoindre la partie"));
+    if (!response.ok) {
+        alert(await readApiError(response, "Impossible de rejoindre la partie"));
+        return false;
+    }
     const data = await response.json();
     onlineGameId = data.gameId;
     onlinePlayerColor = data.color;
@@ -730,6 +732,7 @@ async function joinOnlineGame(gameId, password) {
     currentGameRewarded = false;
     startOnlineSync();
     renderBoard();
+    return true;
 }
 async function spectateOnlineGame(gameId, password) {
     stopMatchmakingPoll();

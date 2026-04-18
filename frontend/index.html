@@ -26,7 +26,6 @@
 				<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-view="chat" data-i18n="chat">Chat</button>
 				<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-view="games" data-i18n="games">Jeux</button>
 				<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-view="leaderboard" data-i18n="leaderboard">Leaderboard</button>
-				<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-view="tournaments" data-i18n="tournaments-nav">Tournois</button>
 				<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-view="Login" data-i18n="login">Login</button>
 			</nav>
 		</div>
@@ -276,44 +275,6 @@
 							<button id="xp-add-friend-btn" type="button" class="btn btn-light btn-sm" data-i18n="add-friend-action">Ajouter en ami</button>
 							<button id="xp-send-message-btn" type="button" class="btn btn-outline-light btn-sm" data-i18n="send-message-action">Envoyer un message</button>
 							<button id="xp-view-profile-btn" type="button" class="btn btn-outline-light btn-sm" data-i18n="leaderboard-view-profile">Voir le profil</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<section id="view-tournaments" class="view" hidden>
-			<div class="container">
-				<h2 class="h3 text-center mb-3" data-i18n="tournaments-title">Tournois</h2>
-				<div class="row g-3 justify-content-center">
-					<div class="col-12 col-lg-4">
-						<div class="card app-panel mb-3">
-							<div class="card-body">
-								<h3 class="h5 card-title" data-i18n="tournament-create-title">Créer un tournoi</h3>
-								<form id="tournament-create-form" class="d-grid gap-2">
-									<label class="form-label small mb-0" for="tournament-name-input" data-i18n="tournament-name-placeholder">Nom</label>
-									<input id="tournament-name-input" name="name" class="form-control" type="text" required maxlength="160" autocomplete="off">
-									<label class="form-label small mb-0" for="tournament-capacity-select" data-i18n="tournament-capacity-label">Joueurs</label>
-									<select id="tournament-capacity-select" name="capacity" class="form-select">
-										<option value="4">4</option>
-										<option value="8" selected>8</option>
-									</select>
-									<button type="submit" class="btn btn-outline-light" data-i18n="tournament-create-submit">Créer</button>
-								</form>
-							</div>
-						</div>
-						<div class="card app-panel">
-							<div class="card-body">
-								<h3 class="h5 card-title" data-i18n="tournament-list-title">Liste</h3>
-								<div id="tournament-list" class="tournament-list"></div>
-								<button type="button" class="btn btn-outline-light btn-sm mt-2" id="tournament-refresh-btn" data-i18n="tournament-refresh">Rafraîchir</button>
-							</div>
-						</div>
-					</div>
-					<div class="col-12 col-lg-8">
-						<p id="tournament-detail-placeholder" class="text-center text-white-50 small py-4" data-i18n="tournament-pick-one">Choisis un tournoi.</p>
-						<div id="tournament-detail" class="card app-panel" hidden>
-							<!-- rempli par tournaments.ts -->
 						</div>
 					</div>
 				</div>

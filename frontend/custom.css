@@ -424,22 +424,6 @@ body.home #view-home {
     flex-wrap: wrap;
 }
 
-.tournament-bracket {
-    align-items: flex-start;
-}
-
-.tournament-round-column {
-    min-width: min(100%, 220px);
-}
-
-.tournament-match-card {
-    border-radius: 12px;
-}
-
-.tournament-list .tournament-list-item:last-child {
-    margin-bottom: 0 !important;
-}
-
 .chess-shell {
     border: 1px solid var(--stroke);
     border-radius: 16px;

@@ -743,14 +743,17 @@ async function createOnlineGame(): Promise<void> {
 	alert(`Partie créée. Code: ${data.gameId}`);
 }
 
-async function joinOnlineGame(gameId: string, password: string): Promise<void> {
+async function joinOnlineGame(gameId: string, password: string): Promise<boolean> {
 	stopMatchmakingPoll();
 	const response = await fetch(buildApiUrl(`/chess-games/${gameId}/join`), {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ playerId: getCurrentPlayerIdentity(), password: password.trim() }),
 	});
-	if (!response.ok) return alert(await readApiError(response, "Impossible de rejoindre la partie"));
+	if (!response.ok) {
+		alert(await readApiError(response, "Impossible de rejoindre la partie"));
+		return false;
+	}
 	const data = await response.json() as { gameId: string; color: Color } & OnlineChessSession;
 	onlineGameId = data.gameId;
 	onlinePlayerColor = data.color;
@@ -760,6 +763,7 @@ async function joinOnlineGame(gameId: string, password: string): Promise<void> {
 	currentGameRewarded = false;
 	startOnlineSync();
 	renderBoard();
+	return true;
 }
 
 async function spectateOnlineGame(gameId: string, password: string): Promise<void> {

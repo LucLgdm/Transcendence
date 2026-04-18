@@ -29,9 +29,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const vault_1 = require("./config/vault");
 const index_1 = require("./middleware/index");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
-const PORT = Number(process.env.PORT) || 3000;
+app.use((0, cors_1.default)({ origin: true }));
 app.use(express_1.default.json());
+const PORT = Number(process.env.PORT) || 3000;
 async function bootstrap() {
     await (0, vault_1.loadSecrets)();
     const { connectDatabase } = await Promise.resolve().then(() => __importStar(require("./config/database")));
