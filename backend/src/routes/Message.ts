@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { auth, AuthRequest } from "../middleware";
+import { auth, AutRequest } from "../middleware";
 import Message from "../models/Message";
 import { Op } from "sequelize";
 
 const messageRoute = Router();
 
-messageRoute.get("/:otherUserId", auth, async (req: AuthRequest, res) => {
+messageRoute.get("/:otherUserId", auth, async (req: AutRequest, res) => {
     try {
         const currentUserId = req.user!.id;
         const otherUserId = Number(req.params.otherUserId);
@@ -29,7 +29,7 @@ messageRoute.get("/:otherUserId", auth, async (req: AuthRequest, res) => {
     }
 });
 
-messageRoute.post("/:otherUserId", auth, async (req: AuthRequest, res) => {
+messageRoute.post("/:otherUserId", auth, async (req: AutRequest, res) => {
     try {
         const currentUserId = req.user!.id;
         const otherUserId = Number(req.params.otherUserId);

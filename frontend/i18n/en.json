@@ -92,6 +92,7 @@
   "validation-login-password-too-long": "Password is too long.",
   "profile-login-required": "Please log in to access your profile",
   "profile-fetch-error": "Unable to load profile",
+  "profile-user-not-found": "No account matches this username (the user may have been removed or the database was reset).",
   "profile-no-matches": "No matches recorded yet",
   "profile-match-draw": "Draw",
   "profile-match-win": "Win",
@@ -111,8 +112,5 @@
   "match-submit-success": "Match submitted successfully",
   "section-login-required": "Please log in to access this section.",
   "avatar-login-required": "Log in to change your profile picture.",
-  "avatar-select-image": "Please select an image file.",
-  "accueil-title": "Home",
-  "go-to-login": "Go to login page",
-  "reset-users": "Reset users"
+  "avatar-select-image": "Please select an image file."
 }

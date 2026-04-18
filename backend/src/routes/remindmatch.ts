@@ -1,13 +1,12 @@
 import { Router } from "express";
-import { auth, AuthRequest } from "../middleware";
+import { auth, AutRequest } from "../middleware";
 import RemindMatch from "../models/remindmatch";
-import User from "../models/User";
-import {Op, fn, col} from "sequelize";
+import { Op } from "sequelize";
 
 
 const remindMatchRoute = Router();
 
-remindMatchRoute.post("/", auth, async (req: AuthRequest, res) => {
+remindMatchRoute.post("/", auth, async (req: AutRequest, res) => {
     try {
         const { game, player1ID, player2ID, winnerID, scoreP1, scoreP2 } = req.body;
 
@@ -46,35 +45,6 @@ remindMatchRoute.get("/users/:id/matches", auth, async (req, res) => {
     } catch (err) {
       res.status(500).json({ error: "Erreur lors de la récupération des matchs" });
     }
-  });
+});
 
-
-  remindMatchRoute.get("/leaderboard", async (req, res) => {
-    try {
-      const { game } = req.query;
-      if (!game || typeof game !== "string") {
-        return res.status(400).json({ error: "Paramètre 'game' requis" });
-      }
-  
-      const rows = await RemindMatch.findAll({
-        where: { game, winnerID: { [Op.ne]: null } },
-        attributes: ["winnerId", [fn("COUNT", col("winnerId")), "wins"]],
-        group: ["winnerId"],
-        order: [[fn("COUNT", col("winnerId")), "DESC"]],
-        limit: 10,
-        include: [
-          {
-            model: User,
-            as: "player1",
-            attributes: ["id", "username"],
-          },
-        ],
-      });
-  
-      res.json(rows);
-    } catch (err) {
-      res.status(500).json({ error: "Erreur lors du leaderboard" });
-    }
-  });
-  
-  export default remindMatchRoute;
+export default remindMatchRoute;

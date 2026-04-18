@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseLoginBody = exports.parseRegisterBody = void 0;
+exports.parseLoginBody = exports.parseRegisterBody = exports.isValidLookupUsername = void 0;
 const USERNAME_MIN = 3;
 const USERNAME_MAX = 32;
 const PASSWORD_MIN = 8;
@@ -8,6 +8,12 @@ const PASSWORD_MAX = 128;
 const LOGIN_USERNAME_MAX = 128;
 /** Identique aux clés i18n côté frontend pour affichage cohérent */
 const USERNAME_RE = /^[a-zA-Z0-9_-]+$/;
+/** Pseudo pour recherche profil (mêmes règles que l’inscription). */
+function isValidLookupUsername(raw) {
+    const u = raw.trim();
+    return u.length >= USERNAME_MIN && u.length <= USERNAME_MAX && USERNAME_RE.test(u);
+}
+exports.isValidLookupUsername = isValidLookupUsername;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function readString(value) {
     if (typeof value !== "string")

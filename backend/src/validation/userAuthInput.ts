@@ -6,6 +6,12 @@ const LOGIN_USERNAME_MAX = 128;
 
 /** Identique aux clés i18n côté frontend pour affichage cohérent */
 const USERNAME_RE = /^[a-zA-Z0-9_-]+$/;
+
+/** Pseudo pour recherche profil (mêmes règles que l’inscription). */
+export function isValidLookupUsername(raw: string): boolean {
+	const u = raw.trim();
+	return u.length >= USERNAME_MIN && u.length <= USERNAME_MAX && USERNAME_RE.test(u);
+}
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type RegisterParseResult =

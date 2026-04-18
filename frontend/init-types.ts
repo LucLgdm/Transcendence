@@ -43,15 +43,6 @@ export type Match = {
         createdAt: string;
 };
 
-export type LeaderbordRow = {
-    winnerId: number;
-    wins: number;
-    player: {
-        id: number;
-        username: string;
-    };
-};
-
 export type ChatMessage = {
     id: number;
     senderId: number;

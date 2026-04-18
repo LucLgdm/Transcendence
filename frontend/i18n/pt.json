@@ -93,6 +93,7 @@
   "validation-login-password-too-long": "A senha é longa demais.",
   "profile-login-required": "Faça login para acessar seu perfil",
   "profile-fetch-error": "Erro ao carregar perfil",
+  "profile-user-not-found": "Nenhuma conta corresponde a este nome de utilizador (o utilizador pode ter sido removido ou a base de dados foi reiniciada).",
   "profile-no-matches": "Nenhuma partida registrada ainda",
   "profile-match-draw": "Empate",
   "profile-match-win": "Vitória",
@@ -112,8 +113,5 @@
   "match-submit-success": "Partida registrada com sucesso",
   "section-login-required": "Faça login para acessar esta seção.",
   "avatar-login-required": "Faça login para trocar sua foto de perfil.",
-  "avatar-select-image": "Selecione um arquivo de imagem.",
-  "accueil-title": "Início",
-  "go-to-login": "Ir para página de login",
-  "reset-users": "Redefinir usuários"
+  "avatar-select-image": "Selecione um arquivo de imagem."
 }

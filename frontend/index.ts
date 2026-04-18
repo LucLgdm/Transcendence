@@ -1,4 +1,4 @@
-import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
+import type { Friend, ChatMessage, Match } from "./init-types";
 import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
@@ -37,6 +37,8 @@ let cachedLeaderboardStats: UserLeaderboardStats[] = [];
 let eloLeaderboardPage = 0;
 let xpLeaderboardPage = 0;
 let disposeXpProfilePopover: (() => void) | null = null;
+let profileUsernameOverride: string | null = null;
+let profileLoadSeq = 0;
 
 function refreshTranslations(): void {
     applyTranslations();
@@ -47,12 +49,26 @@ function setProfileLogoutButtonVisible(visible: boolean): void {
     if (btn) btn.hidden = !visible;
 }
 
+function setProfileFriendsSectionVisible(visible: boolean): void {
+    const friendsList = document.getElementById("friends_list");
+    const friendHeading = friendsList?.previousElementSibling as HTMLElement | undefined;
+    if (friendHeading?.tagName === "H3") friendHeading.hidden = !visible;
+    if (friendsList) friendsList.hidden = !visible;
+}
+
+function openLeaderboardUserProfile(username: string): void {
+    const name = username.trim();
+    if (!name) return;
+    hideXpProfileActions();
+    window.dispatchEvent(new CustomEvent("app-open-profile", { detail: { username: name } }));
+}
 function initProfileLogout(): void {
     const btn = document.getElementById("profile-logout-btn") as HTMLButtonElement | null;
     if (!btn || btn.dataset.logoutBound === "1") return;
     btn.dataset.logoutBound = "1";
     btn.addEventListener("click", async () => {
         localStorage.removeItem("token");
+        profileUsernameOverride = null;
         await abandonOnlineChessIfNeeded();
         disposePongIfAny();
         setProfileLogoutButtonVisible(false);
@@ -79,20 +95,27 @@ function getStoredLocalChessXp(userId: number): number {
     return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-function getCurrentUserIdFromToken(): number | null {
-    const token = getAuthToken();
-    if (!token) return null;
+function decodeJwtPayloadJson(token: string): Record<string, unknown> | null {
     const payload = token.split(".")[1];
     if (!payload) return null;
     try {
-        const parsed = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { id?: number | string };
-        const id = Number(parsed.id);
-        return Number.isFinite(id) && id > 0 ? id : null;
+        let base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const pad = base64.length % 4;
+        if (pad) base64 += "=".repeat(4 - pad);
+        return JSON.parse(atob(base64)) as Record<string, unknown>;
     } catch {
         return null;
     }
 }
 
+function getCurrentUserIdFromToken(): number | null {
+    const token = getAuthToken();
+    if (!token) return null;
+    const parsed = decodeJwtPayloadJson(token);
+    if (!parsed) return null;
+    const id = Number(parsed.id);
+    return Number.isFinite(id) && id > 0 ? id : null;
+}
 function computeXpFromChessMatches(matches: Match[], currentUserId: number): number {
     return matches
         .filter((match) => match.game.toLowerCase() === "chess")
@@ -143,6 +166,7 @@ function initProfileAvatarPicker(): void {
             alert(t("avatar-login-required"));
             return;
         }
+        if (profileUsernameOverride !== null) {return;}
         avatarInput.click();
     });
 
@@ -349,15 +373,6 @@ async function podMatch(pload: {
     }
 }
 
-async function fetchLeaderboard(game: string): Promise<LeaderbordRow[]> {
-  const res = await fetch(buildApiUrl(`/remind-matches/leaderboard?game=${encodeURIComponent(game)}`));
-  if (!res.ok) {
-    console.error("Erreur fetch leaderboard", res.status);
-    return [];
-  }
-  return res.json();
-}
-
 async function fetchUsers(): Promise<UserSummary[]> {
     const res = await fetch(buildApiUrl("/users"));
     if (!res.ok) {
@@ -430,8 +445,9 @@ function renderXpProfileActions(user: UserSummary, trigger?: HTMLElement): void 
     const selectedUser = document.getElementById("xp-selected-user");
     if (!actions || !selectedUser) return;
 
-    selectedUser.textContent = `${t("xp-selected-player")}: ${user.username} (#${user.id})`;
+    selectedUser.textContent = `${t("xp-selected-player")}: ${user.username}`;
     actions.hidden = false;
+    applyTranslations(actions);
 
     const usePopover = trigger !== undefined;
 
@@ -489,8 +505,9 @@ function openChatWithUser(userId: number): void {
 function bindXpProfileActionButtons(): void {
     const addFriendBtn = document.getElementById("xp-add-friend-btn") as HTMLButtonElement | null;
     const sendMessageBtn = document.getElementById("xp-send-message-btn") as HTMLButtonElement | null;
+    const viewProfileBtn = document.getElementById("xp-view-profile-btn") as HTMLButtonElement | null;
     const dismissBtn = document.querySelector(".xp-profile-popover-dismiss") as HTMLButtonElement | null;
-    if (!addFriendBtn || !sendMessageBtn) return;
+    if (!addFriendBtn || !sendMessageBtn || !viewProfileBtn) return;
 
     if (dismissBtn) {
         dismissBtn.onclick = () => {
@@ -517,6 +534,10 @@ function bindXpProfileActionButtons(): void {
         openChatWithUser(selectedXpUser.id);
         alert(t("message-sent-success"));
         hideXpProfileActions();
+    };
+    viewProfileBtn.onclick = () => {
+        if (!selectedXpUser) return;
+        openLeaderboardUserProfile(selectedXpUser.username);
     };
 }
 
@@ -605,7 +626,7 @@ function renderEloLeaderboard(): void {
     const topEloUser = rankingByElo[0].user;
     if (eloTopProfile && eloTopProfileBtn) {
         eloTopProfile.hidden = false;
-        eloTopProfileBtn.textContent = `${topEloUser.username} (#${topEloUser.id})`;
+        eloTopProfileBtn.textContent = topEloUser.username;
         eloTopProfileBtn.onclick = (e) => {
             renderXpProfileActions(topEloUser, e.currentTarget as HTMLButtonElement);
         };
@@ -662,7 +683,7 @@ async function renderXpLeaderboard(): Promise<void> {
 
     const topUser = ranking[0].user;
     topProfile.hidden = false;
-    topProfileBtn.textContent = `${topUser.username} (#${topUser.id})`;
+    topProfileBtn.textContent = topUser.username;
     topProfileBtn.onclick = (e) => {
         renderXpProfileActions(topUser, e.currentTarget as HTMLButtonElement);
     };
@@ -731,7 +752,7 @@ function initViewSwitching(): void {
         }
     }
 
-    function setActiveView(target: string): void {
+    function setActiveView(target: string, profileFetchUsername?: string): void {
         if (protectedViews.has(target) && !isAuthenticated()) {
             alert(t("section-login-required"));
             target = "Login";
@@ -750,14 +771,30 @@ function initViewSwitching(): void {
         const activeBtn = Array.from(buttons).find((b) => b.dataset.view === target);
         if (activeBtn) activeBtn.classList.add("active");
 
-        if (target === "profile") void initProfile();
+        if (target === "profile") {
+            const u = profileFetchUsername?.trim();
+            void initProfile(u ? { fetchUsername: u } : undefined);
+        }
         if (target === "games") showGamesChoice();
         if (target === "tournaments") void refreshTournamentsView();
     }
 
+    window.addEventListener("app-open-profile", ((ev: Event) => {
+        const e = ev as CustomEvent<{ username?: string }>;
+        const raw = e.detail?.username;
+        if (typeof raw !== "string") return;
+        const name = raw.trim();
+        if (!name) return;
+        profileUsernameOverride = name;
+        setActiveView("profile", name);
+    }) as EventListener);
+
     buttons.forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.view;
+            if (target === "profile") {
+                profileUsernameOverride = null;
+            }
             if (target) {
                 setActiveView(target);
             }
@@ -790,7 +827,8 @@ function initViewSwitching(): void {
     });
 }
 
-async function initProfile(): Promise<void> {
+async function initProfile(opts?: { fetchUsername?: string }): Promise<void> {
+    const seq = ++profileLoadSeq;
     const profileInfo = document.getElementById("profile-info");
     const avatarImg = document.getElementById("profile-avatar") as HTMLImageElement | null;
     if (!profileInfo) 
@@ -801,26 +839,46 @@ async function initProfile(): Promise<void> {
     const token = localStorage.getItem("token");
     if (!token) {
       currentProfileUserId = null;
+      profileUsernameOverride = null;
       profileInfo.innerHTML = `<p>${t("profile-login-required")}</p>`;
       renderProfileXp(0);
+      setProfileFriendsSectionVisible(true);
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;
       }
       return;
     }
 
+    const pathUsername =
+        opts?.fetchUsername !== undefined && opts.fetchUsername.trim() !== ""
+            ? opts.fetchUsername.trim()
+            : profileUsernameOverride?.trim() ?? null;
+    const profilePath =
+        pathUsername !== null && pathUsername.length > 0
+            ? `/users/lookup-username?username=${encodeURIComponent(pathUsername)}`
+            : "/users/me";
     try {
-      const reponse = await fetch(buildApiUrl("/users/me"), {
+      const profileHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      } as const;
+
+      const reponse = await fetch(buildApiUrl(profilePath), {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+        headers: profileHeaders,
       });
+      if (seq !== profileLoadSeq) return;
   
       if (!reponse.ok) {
-        profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+        const fetchedOtherProfile =
+          pathUsername !== null && pathUsername.length > 0;
+        const notFoundMsg =
+          reponse.status === 404 && fetchedOtherProfile
+            ? t("profile-user-not-found")
+            : t("profile-fetch-error");
+        profileInfo.innerHTML = `<p>${notFoundMsg}</p>`;
         setProfileLogoutButtonVisible(false);
+        setProfileFriendsSectionVisible(true);
         return;
       }
   
@@ -834,9 +892,15 @@ async function initProfile(): Promise<void> {
         avatar?: string;
         profile_picture?: string;
       };
-      const currentUserId = user.id;
-      currentProfileUserId = currentUserId;
-      setProfileLogoutButtonVisible(true);
+      if (seq !== profileLoadSeq) return;
+      const displayUserId = user.id;
+      currentProfileUserId = displayUserId;
+      const meFromToken = getCurrentUserIdFromToken();
+      const viewingOther =
+        meFromToken !== null
+          ? displayUserId !== meFromToken
+          : pathUsername !== null && pathUsername.length > 0;
+      setProfileLogoutButtonVisible(!viewingOther);
 
       const creationDateValue = user.createdAt ?? user.createdAT;
       profileInfo.innerHTML = `
@@ -847,8 +911,33 @@ async function initProfile(): Promise<void> {
           creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"
         }</p>
         <button id="profile-language-btn" type="button" class="btn btn-outline-light btn-sm">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
+        ${
+          viewingOther
+            ? `<div class="d-flex flex-wrap gap-2 mt-2">
+          <button type="button" id="profile-view-add-friend" class="btn btn-outline-light btn-sm">${t("add-friend-action")}</button>
+          <button type="button" id="profile-view-send-message" class="btn btn-light btn-sm">${t("send-message-action")}</button>
+        </div>`
+            : ""
+        }
       `;
 
+      if (viewingOther) {
+        document.getElementById("profile-view-add-friend")?.addEventListener("click", async () => {
+          const added = await addFriendById(displayUserId);
+          if (!added) return;
+          await initFriends();
+          await initProfile();
+          alert(`${user.username} ${t("friend-added-success")}`);
+        });
+        document.getElementById("profile-view-send-message")?.addEventListener("click", async () => {
+          const content = window.prompt(`${t("message-prompt")} ${user.username}`);
+          if (!content || !content.trim()) return;
+          const sent = await sendChatMessage(displayUserId, content.trim());
+          if (!sent) return;
+          openChatWithUser(displayUserId);
+          alert(t("message-sent-success"));
+        });
+      }
       const profileLanguageBtn = document.getElementById("profile-language-btn") as HTMLButtonElement | null;
       profileLanguageBtn?.addEventListener("click", () => {
         setLanguage(nextLanguage());
@@ -859,26 +948,44 @@ async function initProfile(): Promise<void> {
       });
   
       if (avatarImg) {
-        const customAvatar = getStoredProfileAvatar(currentUserId);
-        avatarImg.src =
-          (customAvatar && customAvatar.length > 0)
-            ? customAvatar
-            : user.profile_picture && user.profile_picture.length > 0
+        if (viewingOther) {
+          avatarImg.src =
+            user.profile_picture && user.profile_picture.length > 0
               ? user.profile_picture
               : user.avatar && user.avatar.length > 0
-            ? user.avatar
-            : DEFAULT_PROFILE_AVATAR;
+                ? user.avatar
+                : DEFAULT_PROFILE_AVATAR;
+        } else {
+          const customAvatar = getStoredProfileAvatar(displayUserId);
+          avatarImg.src =
+            (customAvatar && customAvatar.length > 0)
+              ? customAvatar
+              : user.profile_picture && user.profile_picture.length > 0
+                ? user.profile_picture
+                : user.avatar && user.avatar.length > 0
+                  ? user.avatar
+                  : DEFAULT_PROFILE_AVATAR;
+        }
       }
   
-      const matches = await fetchUserMatches(currentUserId);
-      const profileFriends = await fetchFriends();
+      const matches = await fetchUserMatches(displayUserId);
+      if (seq !== profileLoadSeq) return;
       const users = await fetchUsers();
+      if (seq !== profileLoadSeq) return;
       const usernamesById = new Map<number, string>(users.map((entry) => [entry.id, entry.username]));
       const matchesList = document.getElementById("profile-matches");
-      const totalXp = computeXpFromChessMatches(matches, currentUserId) + getStoredLocalChessXp(currentUserId);
+      const totalXp = computeXpFromChessMatches(matches, displayUserId) + getStoredLocalChessXp(displayUserId);
       renderProfileXp(totalXp);
-      renderProfileFriends(profileFriends);
+      setProfileFriendsSectionVisible(!viewingOther);
+      if (viewingOther) {
+        renderProfileFriends([]);
+      } else {
+        const profileFriends = await fetchFriends();
+        if (seq !== profileLoadSeq) return;
+        renderProfileFriends(profileFriends);
+      }
   
+      if (seq !== profileLoadSeq) return;
       if (matchesList) {
         if (matches.length === 0) {
           matchesList.innerHTML = `<li>${t("profile-no-matches")}</li>`;
@@ -891,16 +998,16 @@ async function initProfile(): Promise<void> {
   
               if (m.winnerID === null) {
                 result = t("profile-match-draw");
-              } else if (m.winnerID === currentUserId) {
+              } else if (m.winnerID === displayUserId) {
                 result = t("profile-match-win");
               } else {
                 result = t("profile-match-loss");
               }
   
               const adversaireId =
-                m.player1ID === currentUserId ? m.player2ID : m.player1ID;
+                m.player1ID === displayUserId ? m.player2ID : m.player1ID;
               const adversaireName = usernamesById.get(adversaireId) ?? `#${adversaireId}`;
-              const eloDelta = m.winnerID === null ? 0 : (m.winnerID === currentUserId ? 10 : -10);
+              const eloDelta = m.winnerID === null ? 0 : (m.winnerID === displayUserId ? 10 : -10);
               const formattedEloDelta = eloDelta > 0 ? `+${eloDelta}` : String(eloDelta);
   
               return `<li>
@@ -912,8 +1019,10 @@ async function initProfile(): Promise<void> {
         }
       }
     } catch (error) {
+      if (seq !== profileLoadSeq) return;
       profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
       setProfileLogoutButtonVisible(false);
+      setProfileFriendsSectionVisible(true);
       renderProfileXp(0);
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;

@@ -1,14 +1,12 @@
 import axios from "axios";
-export async function loadSecrets() {
+
+export async function loadSecrets(): Promise<void> {
 	try {
-		const response = await axios.get(
-			"http://vault:8200/v1/secret/data/db",
-			{
-				headers: {
-					"X-Vault-Token": process.env.VAULT_TOKEN || "root",
-				},
-			}
-		);
+		const response = await axios.get("http://vault:8200/v1/secret/data/db", {
+			headers: {
+				"X-Vault-Token": process.env.VAULT_TOKEN || "root",
+			},
+		});
 		const data = response.data.data.data;
 
 		process.env.DB_USER = data.DB_USER;

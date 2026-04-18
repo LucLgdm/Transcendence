@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const middleware_1 = require("../middleware");
 const remindmatch_1 = __importDefault(require("../models/remindmatch"));
-const User_1 = __importDefault(require("../models/User"));
 const sequelize_1 = require("sequelize");
 const remindMatchRoute = (0, express_1.Router)();
 remindMatchRoute.post("/", middleware_1.auth, async (req, res) => {
@@ -43,32 +42,6 @@ remindMatchRoute.get("/users/:id/matches", middleware_1.auth, async (req, res) =
     }
     catch (err) {
         res.status(500).json({ error: "Erreur lors de la récupération des matchs" });
-    }
-});
-remindMatchRoute.get("/leaderboard", async (req, res) => {
-    try {
-        const { game } = req.query;
-        if (!game || typeof game !== "string") {
-            return res.status(400).json({ error: "Paramètre 'game' requis" });
-        }
-        const rows = await remindmatch_1.default.findAll({
-            where: { game, winnerID: { [sequelize_1.Op.ne]: null } },
-            attributes: ["winnerId", [(0, sequelize_1.fn)("COUNT", (0, sequelize_1.col)("winnerId")), "wins"]],
-            group: ["winnerId"],
-            order: [[(0, sequelize_1.fn)("COUNT", (0, sequelize_1.col)("winnerId")), "DESC"]],
-            limit: 10,
-            include: [
-                {
-                    model: User_1.default,
-                    as: "player1",
-                    attributes: ["id", "username"],
-                },
-            ],
-        });
-        res.json(rows);
-    }
-    catch (err) {
-        res.status(500).json({ error: "Erreur lors du leaderboard" });
     }
 });
 exports.default = remindMatchRoute;

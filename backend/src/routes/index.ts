@@ -2,11 +2,20 @@ import { Router } from "express";
 import User from "../models/User";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { col, fn } from "sequelize";
 import { auth, AutRequest } from "../middleware";
 import axios from 'axios';
-import { parseLoginBody, parseRegisterBody } from "../validation/userAuthInput";
+import sequelize from "../config/database";
+import { parseLoginBody, parseRegisterBody, isValidLookupUsername } from "../validation/userAuthInput";
 
 const router = Router();
+
+async function findUserProfileBySlug(username: string) {
+	return User.findOne({
+		where: sequelize.where(fn("LOWER", col("username")), username.toLowerCase()),
+		attributes: ["id", "username", "email", "createdAt", "elo", "profile_picture"],
+	});
+}
 
 const getFrontendBaseUrl = (hostName: string): string => {
 	const configured = process.env.FRONTEND_BASE_URL;
@@ -90,6 +99,32 @@ router.get("/me", auth, async (req: AutRequest, res) => {
     } catch (err) {
         res.status(500).json({ error: "Erreur serveur" });
     }
+});
+
+router.get("/lookup-username", auth, async (req: AutRequest, res) => {
+	try {
+		if (!req.user) {
+			return res.status(401).json({ error: "Non authentifié" });
+		}
+		const raw = req.query.username;
+		const segment =
+			typeof raw === "string"
+				? raw
+				: Array.isArray(raw)
+					? String(raw[0] ?? "")
+					: String(raw ?? "");
+		const username = segment.trim();
+		if (!isValidLookupUsername(username)) {
+			return res.status(400).json({ error: "bad-username" });
+		}
+		const user = await findUserProfileBySlug(username);
+		if (!user) {
+			return res.status(404).json({ error: "Utilisateur non trouvé" });
+		}
+		res.json(user);
+	} catch (err) {
+		res.status(500).json({ error: "Erreur serveur" });
+	}
 });
 
 router.get("/auth/42", (req, res) => {

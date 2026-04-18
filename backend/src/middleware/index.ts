@@ -1,41 +1,30 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import User from'../models/User';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
-export const logger = (req: Request, res: Response, next: NextFunction) => {
-    console.log(`${req.method} ${req.url}`);
-    next();
-};
-
-export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+	console.error(err instanceof Error ? err.stack : err);
+	res.status(500).send("Something broke!");
 };
 
 export interface AutRequest extends Request {
-    user?:{id: number; username: string};
+	user?: { id: number; username: string };
 }
 
 export const auth = (req: AutRequest, res: Response, next: NextFunction) => {
-    const autHead = req.headers.authorization;
-    if (!autHead || !autHead.startsWith('Bearer ')) {
-        return res.status(401).json({error: 'not approuved'});
-    }
+	const autHead = req.headers.authorization;
+	if (!autHead || !autHead.startsWith("Bearer ")) {
+		return res.status(401).json({ error: "not approuved" });
+	}
 
-    const token =autHead.substring('Bearer'.length).trim();
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as {
-            id: number;
-            username: string;
-        };
-        req.user = { id: payload.id, username: payload.username };
-        next();
-    } catch (error) {
-        return res.status(401).json({error: 'Invalid token'});
-    }
-
-}
-
-export interface AuthRequest extends Request {
-    user?: {id: number; username:string};
-}
+	const token = autHead.substring("Bearer".length).trim();
+	try {
+		const payload = jwt.verify(token, process.env.JWT_SECRET || "secret") as {
+			id: number;
+			username: string;
+		};
+		req.user = { id: payload.id, username: payload.username };
+		next();
+	} catch (error) {
+		return res.status(401).json({ error: "Invalid token" });
+	}
+};

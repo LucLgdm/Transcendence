@@ -1,28 +1,27 @@
-import express from 'express';
-import { json } from 'body-parser';
-import { connectDatabase } from './config/database';
-import { loadSecrets } from './config/vault';
-import routes from './routes/index';
-import { errorHandler } from './middleware/index';
+import express from "express";
+import { loadSecrets } from "./config/vault";
+import { errorHandler } from "./middleware/index";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-// Middleware
-app.use(json());
+app.use(express.json());
 
-// Database connection
-loadSecrets();
-connectDatabase();
+async function bootstrap(): Promise<void> {
+	await loadSecrets();
+	const { connectDatabase } = await import("./config/database");
+	const { default: userRoutes } = await import("./routes/index");
 
-// Routes
-app.use('/api', routes);
+	app.use("/users", userRoutes);
+	app.use(errorHandler);
 
-// Error handling middleware
-app.use(errorHandler);
+	await connectDatabase();
+	app.listen(PORT, "0.0.0.0", () => {
+		console.log(`Server is running on http://0.0.0.0:${PORT}`);
+	});
+}
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+bootstrap().catch((err) => {
+	console.error(err);
+	process.exit(1);
 });
-
-// export default app;

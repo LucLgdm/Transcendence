@@ -5,6 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "start": "ts-node src/server.ts",
+    "start:app": "ts-node src/app.ts",
     "build": "tsc",
     "dev": "ts-node-dev src/server.ts",
     "docker:build": "docker build -t backend .",

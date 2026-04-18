@@ -7,10 +7,18 @@ const express_1 = require("express");
 const User_1 = __importDefault(require("../models/User"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const sequelize_1 = require("sequelize");
 const middleware_1 = require("../middleware");
 const axios_1 = __importDefault(require("axios"));
+const database_1 = __importDefault(require("../config/database"));
 const userAuthInput_1 = require("../validation/userAuthInput");
 const router = (0, express_1.Router)();
+async function findUserProfileBySlug(username) {
+    return User_1.default.findOne({
+        where: database_1.default.where((0, sequelize_1.fn)("LOWER", (0, sequelize_1.col)("username")), username.toLowerCase()),
+        attributes: ["id", "username", "email", "createdAt", "elo", "profile_picture"],
+    });
+}
 const getFrontendBaseUrl = (hostName) => {
     const configured = process.env.FRONTEND_BASE_URL;
     if (configured) {
@@ -74,6 +82,31 @@ router.get("/me", middleware_1.auth, async (req, res) => {
         const user = await User_1.default.findByPk(req.user.id, {
             attributes: ["id", "username", "email", "createdAt", "elo", "profile_picture"],
         });
+        if (!user) {
+            return res.status(404).json({ error: "Utilisateur non trouvé" });
+        }
+        res.json(user);
+    }
+    catch (err) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+router.get("/lookup-username", middleware_1.auth, async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: "Non authentifié" });
+        }
+        const raw = req.query.username;
+        const segment = typeof raw === "string"
+            ? raw
+            : Array.isArray(raw)
+                ? String(raw[0] ?? "")
+                : String(raw ?? "");
+        const username = segment.trim();
+        if (!(0, userAuthInput_1.isValidLookupUsername)(username)) {
+            return res.status(400).json({ error: "bad-username" });
+        }
+        const user = await findUserProfileBySlug(username);
         if (!user) {
             return res.status(404).json({ error: "Utilisateur non trouvé" });
         }

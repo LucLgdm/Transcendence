@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { auth, AuthRequest } from "../middleware";
+import { auth, AutRequest } from "../middleware";
 import User from "../models/User";
 import Friendship from "../models/Friendship";
 import { Op } from "sequelize";
 
 const FriendRoute = Router();
 
-FriendRoute.post("/:id",  auth, async (req: AuthRequest, res) => {
+FriendRoute.post("/:id",  auth, async (req: AutRequest, res) => {
     try {
         const currentUseId = req.user!.id;
         const friendId = parseInt(req.params.id);
@@ -54,7 +54,7 @@ FriendRoute.post("/:id",  auth, async (req: AuthRequest, res) => {
     }
 });
 
-FriendRoute.post("/:id/accept", auth, async (req: AuthRequest, res) => {
+FriendRoute.post("/:id/accept", auth, async (req: AutRequest, res) => {
     try {
         const currentUseId = req.user?.id;
         const otherId = Number(req.params.id);
@@ -78,7 +78,7 @@ FriendRoute.post("/:id/accept", auth, async (req: AuthRequest, res) => {
     }
 });
 
-FriendRoute.delete("/:id", auth, async (req: AuthRequest, res) => {
+FriendRoute.delete("/:id", auth, async (req: AutRequest, res) => {
     try {
         const currentUseId = req.user?.id;
         const otherId = Number(req.params.id);
@@ -104,7 +104,7 @@ FriendRoute.delete("/:id", auth, async (req: AuthRequest, res) => {
 });
 
 
-FriendRoute.get("/", auth, async (req: AuthRequest, res) => {
+FriendRoute.get("/", auth, async (req: AutRequest, res) => {
     try {
         const currentUserId = req.user!.id;
         const friendships = await Friendship.findAll({
@@ -141,7 +141,7 @@ FriendRoute.get("/", auth, async (req: AuthRequest, res) => {
     }
 });
 
-FriendRoute.get("/requests", auth, async (req: AuthRequest, res) => {
+FriendRoute.get("/requests", auth, async (req: AutRequest, res) => {
     try {
         const currentUserId = req.user!.id;
         const incomingRequests = await Friendship.findAll({

@@ -92,6 +92,7 @@
   "validation-login-password-too-long": "Le mot de passe est trop long.",
   "profile-login-required": "Veuillez vous connecter pour accéder à votre profil",
   "profile-fetch-error": "Erreur de récupération du profil",
+  "profile-user-not-found": "Aucun compte ne correspond à ce pseudo (l’utilisateur a peut-être été supprimé ou la base a été réinitialisée).",
   "profile-no-matches": "Aucun match enregistré pour le moment",
   "profile-match-draw": "Match nul",
   "profile-match-win": "Victoire",
@@ -111,8 +112,5 @@
   "match-submit-success": "Partie déclarée avec succès",
   "section-login-required": "Veuillez vous connecter pour accéder à cette section.",
   "avatar-login-required": "Connectez-vous pour changer votre photo de profil.",
-  "avatar-select-image": "Veuillez sélectionner un fichier image.",
-  "accueil-title": "Accueil",
-  "go-to-login": "Aller à la page de connexion",
-  "reset-users": "Réinitialiser les utilisateurs"
+  "avatar-select-image": "Veuillez sélectionner un fichier image."
 }
