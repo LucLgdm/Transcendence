@@ -1,4 +1,6 @@
-export type Lang = 'en' | 'fr' | 'pt';
+import { heTranslations } from "./he.js";
+
+export type Lang = "en" | "fr" | "pt" | "he";
 
 const translations: Record<Lang, Record<string, string>> = {
   fr: {
@@ -31,6 +33,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "lang-fr": "Français",
     "lang-en": "English",
     "lang-pt": "Português",
+    "lang-he": "עברית",
     "friendlist": "Mes amis",
     "friend-requests-title": "Demandes d'amis reçues",
     "friend-requests-empty": "Aucune demande reçue",
@@ -238,6 +241,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "lang-fr": "Français",
     "lang-en": "English",
     "lang-pt": "Português",
+    "lang-he": "Hebrew",
     "friendlist": "My friends",
     "friend-requests-title": "Incoming friend requests",
     "friend-requests-empty": "No incoming requests",
@@ -445,6 +449,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "lang-fr": "Français",
     "lang-en": "English",
     "lang-pt": "Português",
+    "lang-he": "Hebraico",
     "friendlist": "Meus amigos",
     "friend-requests-title": "Pedidos de amizade recebidos",
     "friend-requests-empty": "Nenhum pedido recebido",
@@ -621,10 +626,11 @@ const translations: Record<Lang, Record<string, string>> = {
     "invalid-name": "Nome demasiado curto ou inválido.",
     "invalid-capacity": "Capacidade permitida: 4 ou 8 jogadores.",
     "invalid-game": "Jogo inválido (apenas xadrez)."
-  }
+  },
+  he: heTranslations,
 };
 
-const languageOrder: Lang[] = ['fr', 'en', 'pt'];
+const languageOrder: Lang[] = ["fr", "en", "pt", "he"];
 let currentLang: Lang = 'fr';
 
 export function setLanguage(lang: Lang) {
@@ -678,4 +684,5 @@ export function applyTranslations(root: ParentNode = document): void {
   }
 
   document.documentElement.lang = currentLang;
+  document.documentElement.removeAttribute("dir");
 }

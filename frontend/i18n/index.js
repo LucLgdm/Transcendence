@@ -1,3 +1,4 @@
+import { heTranslations } from "./he.js";
 const translations = {
     fr: {
         "site-title": "ft_transcendence",
@@ -29,6 +30,7 @@ const translations = {
         "lang-fr": "Français",
         "lang-en": "English",
         "lang-pt": "Português",
+        "lang-he": "עברית",
         "friendlist": "Mes amis",
         "friend-requests-title": "Demandes d'amis reçues",
         "friend-requests-empty": "Aucune demande reçue",
@@ -236,6 +238,7 @@ const translations = {
         "lang-fr": "Français",
         "lang-en": "English",
         "lang-pt": "Português",
+        "lang-he": "Hebrew",
         "friendlist": "My friends",
         "friend-requests-title": "Incoming friend requests",
         "friend-requests-empty": "No incoming requests",
@@ -443,6 +446,7 @@ const translations = {
         "lang-fr": "Français",
         "lang-en": "English",
         "lang-pt": "Português",
+        "lang-he": "Hebraico",
         "friendlist": "Meus amigos",
         "friend-requests-title": "Pedidos de amizade recebidos",
         "friend-requests-empty": "Nenhum pedido recebido",
@@ -619,9 +623,10 @@ const translations = {
         "invalid-name": "Nome demasiado curto ou inválido.",
         "invalid-capacity": "Capacidade permitida: 4 ou 8 jogadores.",
         "invalid-game": "Jogo inválido (apenas xadrez)."
-    }
+    },
+    he: heTranslations,
 };
-const languageOrder = ['fr', 'en', 'pt'];
+const languageOrder = ["fr", "en", "pt", "he"];
 let currentLang = 'fr';
 export function setLanguage(lang) {
     currentLang = lang;
@@ -668,4 +673,5 @@ export function applyTranslations(root = document) {
         document.title = t(documentTitle.dataset.i18n);
     }
     document.documentElement.lang = currentLang;
+    document.documentElement.removeAttribute("dir");
 }
