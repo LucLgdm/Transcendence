@@ -1,6 +1,8 @@
 import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
 import { buildApiUrl } from "./api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
+import { abandonOnlineChessIfNeeded, initChess } from "./chess.js";
+import { initTournaments, refreshTournamentsView } from "./tournaments.js";
 
 type UserSummary = {
     id: number;
@@ -24,7 +26,7 @@ function getAuthToken(): string | null {
     return localStorage.getItem("token");
 }
 
-const DEFAULT_PROFILE_AVATAR = "./image/image.png";
+const DEFAULT_PROFILE_AVATAR = "./image/default_profile_picture.png";
 const LEADERBOARD_PAGE_SIZE = 10;
 let currentProfileUserId: number | null = null;
 let profileAvatarPickerBound = false;
@@ -33,6 +35,7 @@ let pendingChatTargetUserId: number | null = null;
 let cachedLeaderboardStats: UserLeaderboardStats[] = [];
 let eloLeaderboardPage = 0;
 let xpLeaderboardPage = 0;
+let disposeXpProfilePopover: (() => void) | null = null;
 
 function refreshTranslations(): void {
     applyTranslations();
@@ -290,7 +293,6 @@ async function acceptFriendRequestById(friendId: number): Promise<boolean> {
     console.error("Erreur acceptFriend", res.status);
     return false;
   }
-
   return true;
 }
 
@@ -356,11 +358,49 @@ async function fetchUserLeaderboardStats(): Promise<UserLeaderboardStats[]> {
             xp: remoteXp + localXp,
         } satisfies UserLeaderboardStats;
     }));
-
     return stats;
 }
 
-function renderXpProfileActions(user: UserSummary): void {
+function disposeXpProfilePopoverListeners(): void {
+    disposeXpProfilePopover?.();
+    disposeXpProfilePopover = null;
+}
+
+function hideXpProfileActions(): void {
+    disposeXpProfilePopoverListeners();
+    const actions = document.getElementById("xp-profile-actions");
+    if (actions) {
+        actions.hidden = true;
+        actions.classList.remove("xp-profile-actions--popover");
+        actions.style.top = "";
+        actions.style.left = "";
+        actions.style.width = "";
+    }
+    selectedXpUser = null;
+}
+
+function positionXpProfilePopover(trigger: HTMLElement, panel: HTMLElement): void {
+    const pad = 12;
+    const gap = 8;
+    const rect = trigger.getBoundingClientRect();
+    const pr = panel.getBoundingClientRect();
+    const panelW = pr.width;
+    let left = rect.left + rect.width / 2 - panelW / 2;
+    left = Math.max(pad, Math.min(left, window.innerWidth - panelW - pad));
+    panel.style.left = `${Math.round(left)}px`;
+    const h = pr.height;
+    let top = rect.top - gap - h;
+    if (top < pad) {
+        top = rect.bottom + gap;
+    }
+    if (top + h > window.innerHeight - pad) {
+        top = Math.max(pad, window.innerHeight - h - pad);
+    }
+    panel.style.top = `${Math.round(top)}px`;
+}
+
+function renderXpProfileActions(user: UserSummary, trigger?: HTMLElement): void {
+    disposeXpProfilePopoverListeners();
     selectedXpUser = user;
     const actions = document.getElementById("xp-profile-actions");
     const selectedUser = document.getElementById("xp-selected-user");
@@ -368,6 +408,51 @@ function renderXpProfileActions(user: UserSummary): void {
 
     selectedUser.textContent = `${t("xp-selected-player")}: ${user.username} (#${user.id})`;
     actions.hidden = false;
+
+    const usePopover = trigger !== undefined;
+
+    if (usePopover && trigger) {
+        actions.classList.add("xp-profile-actions--popover");
+        const reposition = (): void => {
+            positionXpProfilePopover(trigger, actions);
+        };
+        requestAnimationFrame(() => {
+            requestAnimationFrame(reposition);
+        });
+        const onScrollOrResize = (): void => {
+            reposition();
+        };
+        window.addEventListener("resize", onScrollOrResize);
+        window.addEventListener("scroll", onScrollOrResize, true);
+        const onEscape = (e: KeyboardEvent): void => {
+            if (e.key === "Escape") hideXpProfileActions();
+        };
+        document.addEventListener("keydown", onEscape);
+        const onPointerDown = (e: PointerEvent): void => {
+            const target = e.target as Node;
+            if (actions.contains(target) || trigger.contains(target)) return;
+            hideXpProfileActions();
+        };
+        let pointerDownAttached = false;
+        const pointerTimeout = window.setTimeout(() => {
+            document.addEventListener("pointerdown", onPointerDown, true);
+            pointerDownAttached = true;
+        }, 0);
+        disposeXpProfilePopover = (): void => {
+            window.clearTimeout(pointerTimeout);
+            if (pointerDownAttached) {
+                document.removeEventListener("pointerdown", onPointerDown, true);
+            }
+            window.removeEventListener("resize", onScrollOrResize);
+            window.removeEventListener("scroll", onScrollOrResize, true);
+            document.removeEventListener("keydown", onEscape);
+        };
+    } else {
+        actions.classList.remove("xp-profile-actions--popover");
+        actions.style.top = "";
+        actions.style.left = "";
+        actions.style.width = "";
+    }
 }
 
 function openChatWithUser(userId: number): void {
@@ -380,7 +465,14 @@ function openChatWithUser(userId: number): void {
 function bindXpProfileActionButtons(): void {
     const addFriendBtn = document.getElementById("xp-add-friend-btn") as HTMLButtonElement | null;
     const sendMessageBtn = document.getElementById("xp-send-message-btn") as HTMLButtonElement | null;
+    const dismissBtn = document.querySelector(".xp-profile-popover-dismiss") as HTMLButtonElement | null;
     if (!addFriendBtn || !sendMessageBtn) return;
+
+    if (dismissBtn) {
+        dismissBtn.onclick = () => {
+            hideXpProfileActions();
+        };
+    }
 
     addFriendBtn.onclick = async () => {
         if (!selectedXpUser) return;
@@ -389,6 +481,7 @@ function bindXpProfileActionButtons(): void {
         await initFriends();
         await initProfile();
         alert(`${selectedXpUser.username} ${t("friend-added-success")}`);
+        hideXpProfileActions();
     };
 
     sendMessageBtn.onclick = async () => {
@@ -399,6 +492,7 @@ function bindXpProfileActionButtons(): void {
         if (!sent) return;
         openChatWithUser(selectedXpUser.id);
         alert(t("message-sent-success"));
+        hideXpProfileActions();
     };
 }
 
@@ -461,7 +555,12 @@ function bindLeaderboardPaginationButtons(): void {
 
 function renderEloLeaderboard(): void {
     const leaderboardTable = document.querySelector("#leaderboard-table tbody");
+    const eloTopProfile = document.getElementById("elo-top-profile");
+    const eloTopProfileBtn = document.getElementById("elo-top-profile-btn") as HTMLButtonElement | null;
     if (!leaderboardTable) return;
+
+    hideXpProfileActions();
+    if (eloTopProfile) eloTopProfile.hidden = true;
 
     if (cachedLeaderboardStats.length === 0) {
         leaderboardTable.innerHTML = `
@@ -479,15 +578,33 @@ function renderEloLeaderboard(): void {
     if (eloLeaderboardPage > totalPages - 1) eloLeaderboardPage = totalPages - 1;
     const pageEntries = paginateEntries(rankingByElo, eloLeaderboardPage);
 
+    const topEloUser = rankingByElo[0].user;
+    if (eloTopProfile && eloTopProfileBtn) {
+        eloTopProfile.hidden = false;
+        eloTopProfileBtn.textContent = `${topEloUser.username} (#${topEloUser.id})`;
+        eloTopProfileBtn.onclick = (e) => {
+            renderXpProfileActions(topEloUser, e.currentTarget as HTMLButtonElement);
+        };
+    }
+
     leaderboardTable.innerHTML = pageEntries
         .map((entry) => `
           <tr>
-            <td>${entry.user.username}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn elo-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
             <td>${entry.user.elo ?? 500}</td>
             <td>${t("chess")}</td>
           </tr>
         `)
         .join("");
+
+    const userMap = new Map<number, UserSummary>(pageEntries.map((entry) => [entry.user.id, entry.user]));
+    leaderboardTable.querySelectorAll<HTMLButtonElement>(".elo-row-profile").forEach((button) => {
+        button.addEventListener("click", (e) => {
+            const id = Number(button.dataset.userId);
+            const user = userMap.get(id);
+            if (user) renderXpProfileActions(user, e.currentTarget as HTMLButtonElement);
+        });
+    });
 
     renderLeaderboardPagination();
 }
@@ -499,8 +616,7 @@ async function renderXpLeaderboard(): Promise<void> {
     const xpActions = document.getElementById("xp-profile-actions");
     if (!xpTableBody || !topProfile || !topProfileBtn || !xpActions) return;
 
-    selectedXpUser = null;
-    xpActions.hidden = true;
+    hideXpProfileActions();
     topProfile.hidden = true;
 
     const stats = cachedLeaderboardStats;
@@ -523,7 +639,9 @@ async function renderXpLeaderboard(): Promise<void> {
     const topUser = ranking[0].user;
     topProfile.hidden = false;
     topProfileBtn.textContent = `${topUser.username} (#${topUser.id})`;
-    topProfileBtn.onclick = () => renderXpProfileActions(topUser);
+    topProfileBtn.onclick = (e) => {
+        renderXpProfileActions(topUser, e.currentTarget as HTMLButtonElement);
+    };
 
     const totalPages = getTotalPages(ranking.length);
     if (xpLeaderboardPage > totalPages - 1) xpLeaderboardPage = totalPages - 1;
@@ -532,7 +650,7 @@ async function renderXpLeaderboard(): Promise<void> {
     xpTableBody.innerHTML = pageEntries
         .map((entry) => `
             <tr>
-                <td><button type="button" class="xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
+                <td><button type="button" class="btn btn-sm btn-outline-light xp-profile-btn xp-row-profile" data-user-id="${entry.user.id}">${entry.user.username}</button></td>
                 <td>${entry.xp}</td>
             </tr>
         `)
@@ -540,10 +658,10 @@ async function renderXpLeaderboard(): Promise<void> {
 
     const userMap = new Map<number, UserSummary>(ranking.map((entry) => [entry.user.id, entry.user]));
     xpTableBody.querySelectorAll<HTMLButtonElement>(".xp-row-profile").forEach((button) => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (e) => {
             const id = Number(button.dataset.userId);
             const user = userMap.get(id);
-            if (user) renderXpProfileActions(user);
+            if (user) renderXpProfileActions(user, e.currentTarget as HTMLButtonElement);
         });
     });
 
@@ -557,27 +675,25 @@ function initViewSwitching(): void {
     const gamesContent = document.getElementById("games-content");
     const chessContainer = document.getElementById("chess-container");
     const pongContainer = document.getElementById("pong-container");
-    const gameReport = document.getElementById("game-report");
-    const matchGame = document.getElementById("match-game") as HTMLSelectElement | null;
-    const protectedViews = new Set(["profile", "friends", "chat"]);
+    const protectedViews = new Set(["profile", "friends", "chat", "tournaments"]);
 
     function isAuthenticated(): boolean {
         return Boolean(getAuthToken());
     }
 
     function showGamesChoice(): void {
+        void abandonOnlineChessIfNeeded();
         if (gamesChoice) gamesChoice.hidden = false;
         if (gamesContent) gamesContent.hidden = true;
     }
-
-    function showSelectedGame(game: "chess" | "pong"): void {
+    async function showSelectedGame(game: "chess" | "pong"): Promise<void> {
+        if (game === "pong") {
+            await abandonOnlineChessIfNeeded();
+        }
         if (gamesChoice) gamesChoice.hidden = true;
         if (gamesContent) gamesContent.hidden = false;
-
         if (chessContainer) chessContainer.hidden = game !== "chess";
         if (pongContainer) pongContainer.hidden = game !== "pong";
-        if (gameReport) gameReport.hidden = false;
-        if (matchGame) matchGame.value = game;
 
         if (game === "chess") {
             initChess();
@@ -594,14 +710,18 @@ function initViewSwitching(): void {
             view.hidden = view.id !== `view-${target}`;
         });
 
+        if (target !== "games") {
+            void abandonOnlineChessIfNeeded();
+        }
         document.body.classList.toggle("home", target === "home");
 
-        buttons.forEach((b) => b.classList.remove("pill--active"));
+        buttons.forEach((b) => b.classList.remove("active"));
         const activeBtn = Array.from(buttons).find((b) => b.dataset.view === target);
-        if (activeBtn) activeBtn.classList.add("pill--active");
+        if (activeBtn) activeBtn.classList.add("active");
 
         if (target === "profile") void initProfile();
         if (target === "games") showGamesChoice();
+        if (target === "tournaments") void refreshTournamentsView();
     }
 
     buttons.forEach((btn) => {
@@ -619,23 +739,23 @@ function initViewSwitching(): void {
 
     chessCard?.addEventListener("click", () => {
         setActiveView("games");
-        showSelectedGame("chess");
+        void showSelectedGame("chess");
     });
 
     pongCard?.addEventListener("click", () => {
         setActiveView("games");
-        showSelectedGame("pong");
+        void showSelectedGame("pong");
     });
 
     const gamesChessCard = document.getElementById("games-card-chess");
     const gamesPongCard = document.getElementById("games-card-pong");
 
     gamesChessCard?.addEventListener("click", () => {
-        showSelectedGame("chess");
+        void showSelectedGame("chess");
     });
 
     gamesPongCard?.addEventListener("click", () => {
-        showSelectedGame("pong");
+        void showSelectedGame("pong");
     });
 }
 
@@ -691,7 +811,7 @@ async function initProfile(): Promise<void> {
         <p>${t("profile-created-at")}: ${
           creationDateValue ? new Date(creationDateValue).toLocaleDateString() : "N/A"
         }</p>
-        <button id="profile-language-btn" type="button">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
+        <button id="profile-language-btn" type="button" class="btn btn-outline-light btn-sm">${t("profile-change-language")} (${t(`lang-${getLanguage()}`)})</button>
       `;
 
       const profileLanguageBtn = document.getElementById("profile-language-btn") as HTMLButtonElement | null;
@@ -782,8 +902,8 @@ async function initFriends(): Promise<void> {
             friendsList!.innerHTML = `<li>${t("friends-empty")}</li>`;
             return;
         }
-        friendsList!.innerHTML = friends.map((friend) => `<li>${friend.username} (${friend.email})
-            <button data-friend-id="${friend.id}" class="delete_friend">${t("delete")}</button>
+        friendsList!.innerHTML = friends.map((friend) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${friend.username} (${friend.email})
+            <button type="button" data-friend-id="${friend.id}" class="btn btn-sm btn-outline-light delete_friend">${t("delete")}</button>
             </li>`).join("");
 
         friendsList!.querySelectorAll<HTMLButtonElement>('.delete_friend').forEach(btn => {
@@ -806,8 +926,8 @@ async function initFriends(): Promise<void> {
         }
 
         requestsList.innerHTML = requests
-            .map((request) => `<li>${request.username} (${request.email})
-              <button data-friend-id="${request.id}" class="accept_friend">${t("friend-accept")}</button>
+            .map((request) => `<li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">${request.username} (${request.email})
+              <button type="button" data-friend-id="${request.id}" class="btn btn-sm btn-light accept_friend">${t("friend-accept")}</button>
             </li>`)
             .join("");
 
@@ -944,7 +1064,7 @@ function renderProfileFriends(friends: Friend[]): void {
         .map((conversation) => {
           const preview = conversation.lastMessage?.content ?? "";
           return `
-            <button type="button" class="chat-conversation-btn" data-user-id="${conversation.id}">
+            <button type="button" class="btn chat-conversation-btn" data-user-id="${conversation.id}">
               <strong>${conversation.username}</strong>
               <div>${preview}</div>
             </button>
@@ -1024,43 +1144,6 @@ async function initLeaderboard(): Promise<void> {
     await renderXpLeaderboard();
 }
 
-function initMatchForm(): void {
-    const form = document.getElementById('match-form') as HTMLFormElement | null;
-    if (!form)
-        return;
-
-    const gameSelected = document.getElementById('match-game') as HTMLSelectElement | null;
-    const matchplayer1 = document.getElementById('match-p1') as HTMLInputElement | null;
-    const matchplayer2 = document.getElementById('match-p2') as HTMLInputElement | null;
-    const matchwinner = document.getElementById('match-winner') as HTMLInputElement | null;
-    const matchscore1 = document.getElementById('match-score1') as HTMLInputElement | null;
-    const matchscore2 = document.getElementById('match-score2') as HTMLInputElement | null;
-
-    if (!gameSelected || !matchplayer1 || !matchplayer2 || !matchwinner || !matchscore1 || !matchscore2 )
-        return;
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const game = gameSelected.value;
-        const player1 = Number(matchplayer1.value);
-        const player2 = Number(matchplayer2.value);
-        const winner = Number(matchwinner.value);
-        const score1 = Number(matchscore1.value);
-        const score2 = Number(matchscore2.value);
-
-        if (!player1 || !player2) {
-            alert(t("match-missing-player"));
-            return;
-        }
-
-        const winnerId = winner === 0 ? null : winner;
-
-        await podMatch({game, player1ID: player1, player2ID: player2, winnerID: winnerId, scoreP1: score1, scoreP2: score2});
-    });
-
-    form.reset();
-}
-
 function main(): void {
     initLanguage();
     refreshTranslations();
@@ -1077,8 +1160,8 @@ function main(): void {
     initChat();
     initGames();
     initLeaderboard();
+    initTournaments();
     initSidebarToggle();
-    initMatchForm();
 }
 
 if (document.readyState === 'loading') {
@@ -1106,5 +1189,3 @@ function initSidebarToggle(): void {
         document.body.classList.toggle('sidebar-collapsed');
     });
 }
-
-import {initChess}  from "./chess.js";

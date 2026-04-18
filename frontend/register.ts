@@ -1,40 +1,53 @@
-import { User, userMap } from "./user.js";
 import { buildApiUrl } from "./api.js";
+import { validateRegisterFields } from "./auth-validation.js";
 import { applyTranslations, initLanguage, t } from "./i18n/index.js";
 
-const registerForm = document.getElementById("registerForm") as HTMLFormElement;
-const newUserName = document.getElementById("userName") as HTMLInputElement;
-const newEmail = document.getElementById("email") as HTMLInputElement;
-const newPassword = document.getElementById("password") as HTMLInputElement;
+const registerForm = document.getElementById("registerForm") as HTMLFormElement | null;
+const newUserName = document.getElementById("userName") as HTMLInputElement | null;
+const newEmail = document.getElementById("email") as HTMLInputElement | null;
+const newPassword = document.getElementById("password") as HTMLInputElement | null;
 
 initLanguage();
 applyTranslations();
 
-registerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+if (registerForm && newUserName && newEmail && newPassword) {
+	registerForm.addEventListener("submit", async (event) => {
+		event.preventDefault();
 
-    try {
-        const response = await fetch(buildApiUrl("/users/register"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: newUserName.value,
-			    email: newEmail.value,
-                password: newPassword.value
-            })
-        });
+		const checked = validateRegisterFields({
+			username: newUserName.value,
+			email: newEmail.value,
+			password: newPassword.value,
+		});
+		if (!checked.ok) {
+			alert(t(checked.key));
+			return;
+		}
 
-        if (response.ok) {
-            alert(t("register-success"));
-            window.location.replace("./index.html");
-            return;
-        }
+		try {
+			const response = await fetch(buildApiUrl("/users/register"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					username: checked.username,
+					email: checked.email,
+					password: checked.password,
+				}),
+			});
 
-        const error = await response.json().catch(() => ({ error: t("unknown-error") }));
-        alert(error.error || t("register-failed"));
-        console.error("Erreur:", error);
-    } catch (error) {
-        console.error("Erreur réseau:", error);
-        alert(t("network-register-error"));
-    }
-});
+			if (response.ok) {
+				alert(t("register-success"));
+				window.location.replace("./index.html");
+				return;
+			}
+
+			const error = await response.json().catch(() => ({ error: "unknown-error" }));
+			const errMsg = typeof error.error === "string" ? error.error : "register-failed";
+			alert(t(errMsg));
+			console.error("Erreur:", error);
+		} catch (error) {
+			console.error("Erreur réseau:", error);
+			alert(t("network-register-error"));
+		}
+	});
+}

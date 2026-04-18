@@ -1,11 +1,11 @@
-import { User, userMap } from "./user.js";
 import { buildApiUrl } from "./api.js";
+import { validateLoginFields } from "./auth-validation.js";
 import { applyTranslations, initLanguage, t } from "./i18n/index.js";
 
 
-const form = document.getElementById("loginForm") as HTMLFormElement;
-const usernameInput = document.getElementById("username") as HTMLInputElement;
-const passwordInput = document.getElementById("password") as HTMLInputElement;
+const form = document.getElementById("loginForm") as HTMLFormElement | null;
+const usernameInput = document.getElementById("username") as HTMLInputElement | null;
+const passwordInput = document.getElementById("password") as HTMLInputElement | null;
 const oauth42Link = document.getElementById("oauth42Link") as HTMLAnchorElement | null;
 
 initLanguage();
@@ -27,47 +27,49 @@ if (tokenFromUrl) {
 	console.error("OAuth 42 error:", errorFromUrl);
 	alert(`${t("oauth-failed")}: ${errorFromUrl}`);
 }
-form.addEventListener("submit", async (event) => {
-	event.preventDefault();
 
-	try {
-		const response = await fetch(buildApiUrl("/users/login"), {
-        	method: "POST",
-        	headers: { "Content-Type": "application/json" },
-        	body: JSON.stringify({
-            	username: usernameInput.value,
-            	password: passwordInput.value
-        	})
-    	});
+if (form && usernameInput && passwordInput) {
+	form.addEventListener("submit", async (event) => {
+		event.preventDefault();
 
-		if (response.ok) {
-			const data = await response.json();
-			localStorage.setItem("token", data.token);
-			alert(t("login-success"));
-			window.location.replace("./index.html");
+		const checked = validateLoginFields({
+			username: usernameInput.value,
+			password: passwordInput.value,
+		});
+		if (!checked.ok) {
+			alert(t(checked.key));
 			return;
 		}
 
-		const error = await response.json().catch(() => ({ error: t("invalid-credentials") }));
-		alert(error.error || t("login-failed"));
-		console.log("Login failed:", error);
-	} catch (error) {
-		console.error("Erreur réseau:", error);
-		alert(t("network-login-error"));
-	}
-});
+		try {
+			const response = await fetch(buildApiUrl("/users/login"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					username: checked.username,
+					password: checked.password,
+				}),
+			});
 
+			if (response.ok) {
+				const data = await response.json();
+				localStorage.setItem("token", data.token);
+				alert(t("login-success"));
+				window.location.replace("./index.html");
+				return;
+			}
 
-const createAccountBtn = document.getElementById("createAccountBtn") as HTMLButtonElement;
-createAccountBtn.addEventListener("click", () => {
-    console.log("Création de compte");
-});
-
-function validateLogin(username: string, password: string, users: User[]): boolean {
-	for (const user of users) {
-		if (user.username === username && user.password === password) {
-			return true;
+			const error = await response.json().catch(() => ({ error: "invalid-credentials" }));
+			const errMsg = typeof error.error === "string" ? error.error : "login-failed";
+			alert(t(errMsg));
+		} catch (error) {
+			console.error("Erreur réseau:", error);
+			alert(t("network-login-error"));
 		}
-	}
-	return false;
+	});
 }
+
+const createAccountBtn = document.getElementById("createAccountBtn") as HTMLButtonElement | null;
+createAccountBtn?.addEventListener("click", () => {
+	window.location.href = "register.html";
+});
