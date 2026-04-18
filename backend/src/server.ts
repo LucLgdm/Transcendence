@@ -31,7 +31,6 @@ app.use("/chess-games", chessGameRoute);
 app.use("/tournaments", tournamentRoute);
 async function bootstrap() {
 	await connectDatabase();
-	await sequelize.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS elo INTEGER NOT NULL DEFAULT 500;");
 	await User.sync();
 	await Friendship.sync();
 	await Message.sync();
