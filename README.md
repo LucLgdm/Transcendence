@@ -20,8 +20,7 @@ Application web multijoueur permettant de jouer à Pong et aux échecs en temps 
 
 ## Description
 
-**Transcendance** est une application web développée dans le cadre du cursus de 42.
-Elle propose une plateforme de jeu en ligne intégrant Pong et les échecs, avec des fonctionnalités en temps réel et une dimension sociale.
+Ce projet est une application web qui propose une plateforme de jeu en ligne intégrant Pong et les échecs, avec des fonctionnalités en temps réel et une dimension sociale.
 
 ---
 
