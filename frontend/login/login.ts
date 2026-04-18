@@ -1,6 +1,6 @@
-import { buildApiUrl } from "./api.js";
-import { validateLoginFields } from "./auth-validation.js";
-import { applyTranslations, initLanguage, t } from "./i18n/index.js";
+import { buildApiUrl } from "../api/api.js";
+import { validateLoginFields } from "../auth/auth-validation.js";
+import { applyTranslations, initLanguage, t } from "../i18n/index.js";
 
 
 const form = document.getElementById("loginForm") as HTMLFormElement | null;

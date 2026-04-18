@@ -1,5 +1,5 @@
-import { buildApiUrl } from "./api.js";
-import { applyTranslations, t } from "./i18n/index.js";
+import { buildApiUrl } from "../api/api.js";
+import { applyTranslations, t } from "../i18n/index.js";
 
 type TournamentRow = {
 	id: number;

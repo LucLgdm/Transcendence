@@ -24,7 +24,6 @@ stop:
 
 clean:
 	@echo "Cleaning compiled files..."
-	@rm -f src/*.js src/*/*.js
 	docker compose down --volumes --rmi all
 	
 	@echo "Cleanup complete."

@@ -1,4 +1,4 @@
-import {User, userMap } from "./user.js";
+import {User, userMap } from "../user/user.js";
 
 const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
 

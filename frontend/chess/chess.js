@@ -1,5 +1,5 @@
-import { buildApiUrl } from "./api.js";
-import { t } from "./i18n/index.js";
+import { buildApiUrl } from "../api/api.js";
+import { t } from "../i18n/index.js";
 const CHESS_POLL_INTERVAL_MS = 1200;
 const KNIGHT_OFFSETS = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
 const KING_OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];

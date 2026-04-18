@@ -1,6 +1,6 @@
-import type { PieceType, Color, Piece, Position, Board, ChessGame as IChessGame } from "./init-types";
-import { buildApiUrl } from "./api.js";
-import { t } from "./i18n/index.js";
+import type { PieceType, Color, Piece, Position, Board, ChessGame as IChessGame } from "../init-types";
+import { buildApiUrl } from "../api/api.js";
+import { t } from "../i18n/index.js";
 
 type InternalBoard = (Piece | null)[][];
 type PromotionPiece = Extract<PieceType, "queen" | "rook" | "bishop" | "knight">;

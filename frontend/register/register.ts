@@ -1,6 +1,6 @@
-import { buildApiUrl } from "./api.js";
-import { validateRegisterFields } from "./auth-validation.js";
-import { applyTranslations, initLanguage, t } from "./i18n/index.js";
+import { buildApiUrl } from "../api/api.js";
+import { validateRegisterFields } from "../auth/auth-validation.js";
+import { applyTranslations, initLanguage, t } from "../i18n/index.js";
 
 const registerForm = document.getElementById("registerForm") as HTMLFormElement | null;
 const newUserName = document.getElementById("userName") as HTMLInputElement | null;

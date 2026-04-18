@@ -1,8 +1,8 @@
 import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
-import { buildApiUrl } from "./api.js";
+import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
-import { abandonOnlineChessIfNeeded, initChess } from "./chess.js";
-import { initTournaments, refreshTournamentsView } from "./tournaments.js";
+import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
+import { initTournaments, refreshTournamentsView } from "./tournament/tournaments.js";
 
 type UserSummary = {
     id: number;
