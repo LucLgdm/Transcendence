@@ -1,9 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../config/database";
 
-/**
- * Attributs du User tels qu'ils existent en base
- */
 interface UserAttributes {
 	id: number;
 	username: string;
@@ -16,16 +13,9 @@ interface UserAttributes {
 	updatedAt?: Date;
 }
 
-/**
- * Attributs requis à la création
- * (id, createdAt, updatedAt sont générés automatiquement)
- */
 interface UserCreationAttributes
 extends Optional<UserAttributes, "id" | "elo"> {}
 
-/**
- * Classe User
- */
 class User
 extends Model<UserAttributes, UserCreationAttributes>
 implements UserAttributes
@@ -41,10 +31,7 @@ implements UserAttributes
 	public readonly createdAt!: Date;
 	public readonly updatedAt!: Date;
 }
-``
-/**
- * Définition du modèle Sequelize
- */
+
 User.init(
 	{
 		id: {

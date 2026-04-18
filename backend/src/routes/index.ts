@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { auth, AutRequest } from "../middleware";
 import axios from 'axios';
+import { parseLoginBody, parseRegisterBody } from "../validation/userAuthInput";
 
 const router = Router();
 
@@ -31,9 +32,13 @@ res.json(users);
 
 router.post("/register", async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const parsed = parseRegisterBody(req.body);
+        if (!parsed.ok) {
+            return res.status(400).json({ error: parsed.error });
+        }
+        const { username, email, password } = parsed;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await User.create({ username, email, password: hashedPassword });
+        await User.create({ username, email, password: hashedPassword });
         res.status(201).json({ message: "Utilisateur créé" });
     } catch (err) {
         res.status(400).json({ error: "Utilisateur déjà existant ou données invalides" });
@@ -41,7 +46,11 @@ router.post("/register", async (req, res) => {
 });
 router.post("/login", async (req, res) => {
 	try {
-		const { username, password } = req.body;
+		const parsed = parseLoginBody(req.body);
+		if (!parsed.ok) {
+			return res.status(400).json({ error: parsed.error });
+		}
+		const { username, password } = parsed;
 
 		const user = await User.findOne({ where: { username } });
 		if (!user || !user.password)
