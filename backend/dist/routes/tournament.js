@@ -12,7 +12,7 @@ const User_1 = __importDefault(require("../models/User"));
 const database_1 = __importDefault(require("../config/database"));
 const router = (0, express_1.Router)();
 const ALLOWED_CAPACITIES = new Set([4, 8]);
-const ALLOWED_GAMES = new Set(["chess", "pong"]);
+const ALLOWED_GAMES = new Set(["chess"]);
 function shuffleIds(ids) {
     const a = [...ids];
     for (let i = a.length - 1; i > 0; i -= 1) {
@@ -37,7 +37,7 @@ router.post("/", middleware_1.auth, async (req, res) => {
             return res.status(400).json({ error: "invalid-game" });
         const t = await Tournament_1.default.create({
             name: name.trim().slice(0, 160),
-            game: gameStr,
+            game: "chess",
             capacity: cap,
             status: "registration",
             createdByUserId: req.user.id,

@@ -42,6 +42,29 @@ function refreshTranslations(): void {
     applyTranslations();
 }
 
+function setProfileLogoutButtonVisible(visible: boolean): void {
+    const btn = document.getElementById("profile-logout-btn") as HTMLButtonElement | null;
+    if (btn) btn.hidden = !visible;
+}
+
+function initProfileLogout(): void {
+    const btn = document.getElementById("profile-logout-btn") as HTMLButtonElement | null;
+    if (!btn || btn.dataset.logoutBound === "1") return;
+    btn.dataset.logoutBound = "1";
+    btn.addEventListener("click", async () => {
+        localStorage.removeItem("token");
+        await abandonOnlineChessIfNeeded();
+        disposePongIfAny();
+        setProfileLogoutButtonVisible(false);
+        document.querySelector<HTMLButtonElement>('nav button[data-view="home"]')?.click();
+        refreshTranslations();
+        void initProfile();
+        void initLeaderboard();
+        void initFriends();
+        void refreshTournamentsView();
+    });
+}
+
 function getStoredProfileAvatar(userId: number): string | null {
     return localStorage.getItem(`profile-avatar-${userId}`);
 }
@@ -772,6 +795,8 @@ async function initProfile(): Promise<void> {
     const avatarImg = document.getElementById("profile-avatar") as HTMLImageElement | null;
     if (!profileInfo) 
         return;
+
+    setProfileLogoutButtonVisible(false);
   
     const token = localStorage.getItem("token");
     if (!token) {
@@ -795,6 +820,7 @@ async function initProfile(): Promise<void> {
   
       if (!reponse.ok) {
         profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+        setProfileLogoutButtonVisible(false);
         return;
       }
   
@@ -810,7 +836,8 @@ async function initProfile(): Promise<void> {
       };
       const currentUserId = user.id;
       currentProfileUserId = currentUserId;
-  
+      setProfileLogoutButtonVisible(true);
+
       const creationDateValue = user.createdAt ?? user.createdAT;
       profileInfo.innerHTML = `
         <p>${t("profile-username")}: ${user.username}</p>
@@ -886,6 +913,7 @@ async function initProfile(): Promise<void> {
       }
     } catch (error) {
       profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+      setProfileLogoutButtonVisible(false);
       renderProfileXp(0);
       if (avatarImg) {
         avatarImg.src = DEFAULT_PROFILE_AVATAR;
@@ -1149,6 +1177,7 @@ function main(): void {
     });
     initProfileAvatarPicker();
     initViewSwitching();
+    initProfileLogout();
     initProfile();
     initFriends();
     initChat();

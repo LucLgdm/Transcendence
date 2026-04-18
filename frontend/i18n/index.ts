@@ -21,6 +21,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "profile-email": "Email",
     "profile-created-at": "Date de création",
     "profile-change-language": "Changer de langue",
+    "profile-logout": "Déconnexion",
     "profile-rules-title": "Regles et progression",
     "profile-rules-elo-base": "Elo de depart: 500",
     "profile-rules-elo-win": "Victoire en ligne: +10 Elo",
@@ -206,7 +207,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "server-error": "Erreur serveur.",
     "invalid-name": "Nom trop court ou invalide.",
     "invalid-capacity": "Capacité autorisée : 4 ou 8 joueurs.",
-    "invalid-game": "Jeu non valide (échecs ou pong uniquement)."
+    "invalid-game": "Jeu non valide (échecs uniquement)."
   },
   en: {
     "site-title": "ft_transcendence",
@@ -228,6 +229,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "profile-email": "Email",
     "profile-created-at": "Creation date",
     "profile-change-language": "Change language",
+    "profile-logout": "Log out",
     "profile-rules-title": "Rules and progression",
     "profile-rules-elo-base": "Starting Elo: 500",
     "profile-rules-elo-win": "Online win: +10 Elo",
@@ -413,7 +415,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "server-error": "Server error.",
     "invalid-name": "Name too short or invalid.",
     "invalid-capacity": "Allowed capacity: 4 or 8 players.",
-    "invalid-game": "Invalid game (chess or pong only)."
+    "invalid-game": "Invalid game (chess only)."
   },
   pt: {
     "site-title": "ft_transcendence",
@@ -435,6 +437,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "profile-email": "E-mail",
     "profile-created-at": "Data de criação",
     "profile-change-language": "Mudar idioma",
+    "profile-logout": "Sair",
     "profile-rules-title": "Regras e progressao",
     "profile-rules-elo-base": "Elo inicial: 500",
     "profile-rules-elo-win": "Vitoria online: +10 Elo",
@@ -620,7 +623,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "server-error": "Erro do servidor.",
     "invalid-name": "Nome demasiado curto ou inválido.",
     "invalid-capacity": "Capacidade permitida: 4 ou 8 jogadores.",
-    "invalid-game": "Jogo inválido (apenas xadrez ou pong)."
+    "invalid-game": "Jogo inválido (apenas xadrez)."
   }
 };
 

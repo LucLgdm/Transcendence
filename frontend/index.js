@@ -19,6 +19,29 @@ let disposeXpProfilePopover = null;
 function refreshTranslations() {
     applyTranslations();
 }
+function setProfileLogoutButtonVisible(visible) {
+    const btn = document.getElementById("profile-logout-btn");
+    if (btn)
+        btn.hidden = !visible;
+}
+function initProfileLogout() {
+    const btn = document.getElementById("profile-logout-btn");
+    if (!btn || btn.dataset.logoutBound === "1")
+        return;
+    btn.dataset.logoutBound = "1";
+    btn.addEventListener("click", async () => {
+        localStorage.removeItem("token");
+        await abandonOnlineChessIfNeeded();
+        disposePongIfAny();
+        setProfileLogoutButtonVisible(false);
+        document.querySelector('nav button[data-view="home"]')?.click();
+        refreshTranslations();
+        void initProfile();
+        void initLeaderboard();
+        void initFriends();
+        void refreshTournamentsView();
+    });
+}
 function getStoredProfileAvatar(userId) {
     return localStorage.getItem(`profile-avatar-${userId}`);
 }
@@ -695,6 +718,7 @@ async function initProfile() {
     const avatarImg = document.getElementById("profile-avatar");
     if (!profileInfo)
         return;
+    setProfileLogoutButtonVisible(false);
     const token = localStorage.getItem("token");
     if (!token) {
         currentProfileUserId = null;
@@ -715,11 +739,13 @@ async function initProfile() {
         });
         if (!reponse.ok) {
             profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+            setProfileLogoutButtonVisible(false);
             return;
         }
         const user = await reponse.json();
         const currentUserId = user.id;
         currentProfileUserId = currentUserId;
+        setProfileLogoutButtonVisible(true);
         const creationDateValue = user.createdAt ?? user.createdAT;
         profileInfo.innerHTML = `
         <p>${t("profile-username")}: ${user.username}</p>
@@ -789,6 +815,7 @@ async function initProfile() {
     }
     catch (error) {
         profileInfo.innerHTML = `<p>${t("profile-fetch-error")}</p>`;
+        setProfileLogoutButtonVisible(false);
         renderProfileXp(0);
         if (avatarImg) {
             avatarImg.src = DEFAULT_PROFILE_AVATAR;
@@ -1026,6 +1053,7 @@ function main() {
     });
     initProfileAvatarPicker();
     initViewSwitching();
+    initProfileLogout();
     initProfile();
     initFriends();
     initChat();

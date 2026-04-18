@@ -176,7 +176,7 @@ export class GameEngine {
         const winScore = GAME_CONFIG.MATCH.WIN_SCORE;
         const label = winner === 'left' ? 'Camp gauche (W / S)' : 'Camp droit (O / L ou flèches)';
         if (msg) {
-            msg.textContent = `Partie terminée — ${label} gagne (${winScore} pts).`;
+            msg.textContent = `Partie terminée - ${winner} gagne !`;
             msg.hidden = false;
         }
         if (pongInstance === this) {

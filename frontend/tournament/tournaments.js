@@ -265,14 +265,13 @@ export function initTournaments() {
         const fd = new FormData(form);
         const name = String(fd.get("name") ?? "").trim();
         const capacity = Number(fd.get("capacity"));
-        const game = String(fd.get("game") ?? "chess");
         if (!getAuthToken()) {
             alert(t("section-login-required"));
             return;
         }
         const res = await api("/tournaments", {
             method: "POST",
-            body: JSON.stringify({ name, capacity, game }),
+            body: JSON.stringify({ name, capacity, game: "chess" }),
         });
         if (!res.ok) {
             alertApiError(res, await res.json().catch(() => ({})));

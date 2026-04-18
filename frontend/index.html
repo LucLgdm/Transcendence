@@ -69,6 +69,7 @@
 								<div class="profile-xp__bar">
 									<div id="profile-xp-fill" class="profile-xp__fill"></div>
 								</div>
+								<button id="profile-logout-btn" type="button" class="btn btn-outline-danger btn-sm w-100 mt-2" hidden data-i18n="profile-logout">Déconnexion</button>
 							</div>
 						</div>
 						<div class="col profile_r min-w-0">
@@ -292,11 +293,6 @@
 								<form id="tournament-create-form" class="d-grid gap-2">
 									<label class="form-label small mb-0" for="tournament-name-input" data-i18n="tournament-name-placeholder">Nom</label>
 									<input id="tournament-name-input" name="name" class="form-control" type="text" required maxlength="160" autocomplete="off">
-									<label class="form-label small mb-0" for="tournament-game-select" data-i18n="tournament-game-label">Jeu</label>
-									<select id="tournament-game-select" name="game" class="form-select">
-										<option value="chess" selected data-i18n="chess">Échecs</option>
-										<option value="pong" data-i18n="pong">Pong</option>
-									</select>
 									<label class="form-label small mb-0" for="tournament-capacity-select" data-i18n="tournament-capacity-label">Joueurs</label>
 									<select id="tournament-capacity-select" name="capacity" class="form-select">
 										<option value="4">4</option>

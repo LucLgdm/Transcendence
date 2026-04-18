@@ -8,7 +8,7 @@ import sequelize from "../config/database";
 
 const router = Router();
 const ALLOWED_CAPACITIES = new Set([4, 8]);
-const ALLOWED_GAMES = new Set(["chess", "pong"]);
+const ALLOWED_GAMES = new Set(["chess"]);
 
 function shuffleIds(ids: number[]): number[] {
 	const a = [...ids];
@@ -32,7 +32,7 @@ router.post("/", auth, async (req: AutRequest, res) => {
 		if (!ALLOWED_GAMES.has(gameStr)) return res.status(400).json({ error: "invalid-game" });
 		const t = await Tournament.create({
 			name: name.trim().slice(0, 160),
-			game: gameStr as "chess" | "pong",
+			game: "chess",
 			capacity: cap,
 			status: "registration",
 			createdByUserId: req.user.id,
