@@ -943,6 +943,7 @@ async function initProfile(opts?: { fetchUsername?: string }): Promise<void> {
         setLanguage(nextLanguage());
         refreshTranslations();
         void initProfile();
+        void initFriends();
         void initLeaderboard();
         initGames();
       });
@@ -1308,9 +1309,10 @@ function initProfileFriends(): void {
 
     const friends: string[] = JSON.parse(localStorage.getItem('friends') || '[]');
 
-    profileFriendsList.innerHTML = friends.length > 0
-        ? friends.map(friend => `<li>${friend}</li>`).join('')
-        : '<li>Aucun ami pour le moment</li>';
+    profileFriendsList.innerHTML =
+      friends.length > 0
+        ? friends.map((friend) => `<li>${friend}</li>`).join("")
+        : `<li>${t("friends-empty")}</li>`;
 }
 
 function initSidebarToggle(): void {

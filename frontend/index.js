@@ -853,6 +853,7 @@ async function initProfile(opts) {
             setLanguage(nextLanguage());
             refreshTranslations();
             void initProfile();
+            void initFriends();
             void initLeaderboard();
             initGames();
         });
@@ -1194,9 +1195,10 @@ function initProfileFriends() {
     if (!profileFriendsList)
         return;
     const friends = JSON.parse(localStorage.getItem('friends') || '[]');
-    profileFriendsList.innerHTML = friends.length > 0
-        ? friends.map(friend => `<li>${friend}</li>`).join('')
-        : '<li>Aucun ami pour le moment</li>';
+    profileFriendsList.innerHTML =
+        friends.length > 0
+            ? friends.map((friend) => `<li>${friend}</li>`).join("")
+            : `<li>${t("friends-empty")}</li>`;
 }
 function initSidebarToggle() {
     const toggle = document.getElementById('nav-toggle');
