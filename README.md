@@ -186,10 +186,8 @@ https://www.npmjs.com/package/i18n
 
 Artificial intelligence tools were used in this project to:
 
-* correct certain typographical errors
+* correct typographical errors
 * provide educational support to help validate the understanding of specific concepts
-
-
 
 ---
 
