@@ -2,6 +2,7 @@ import type { Friend, ChatMessage, Match, LeaderbordRow } from "./init-types";
 import { buildApiUrl } from "./api/api.js";
 import { applyTranslations, getLanguage, initLanguage, nextLanguage, setLanguage, t } from "./i18n/index.js";
 import { abandonOnlineChessIfNeeded, initChess } from "./chess/chess.js";
+import { disposePongIfAny, initPong } from "./pong/GameEngine.js";
 import { initTournaments, refreshTournamentsView } from "./tournament/tournaments.js";
 
 type UserSummary = {
@@ -683,10 +684,14 @@ function initViewSwitching(): void {
 
     function showGamesChoice(): void {
         void abandonOnlineChessIfNeeded();
+        disposePongIfAny();
         if (gamesChoice) gamesChoice.hidden = false;
         if (gamesContent) gamesContent.hidden = true;
     }
     async function showSelectedGame(game: "chess" | "pong"): Promise<void> {
+        if (game === "chess") {
+            disposePongIfAny();
+        }
         if (game === "pong") {
             await abandonOnlineChessIfNeeded();
         }
@@ -697,6 +702,9 @@ function initViewSwitching(): void {
 
         if (game === "chess") {
             initChess();
+        }
+        if (game === "pong") {
+            initPong();
         }
     }
 
@@ -1112,20 +1120,6 @@ function renderProfileFriends(friends: Friend[]): void {
   }
 
 function initGames(): void {
-    // pong init a changer si jamais
-    const pongCanvas = document.getElementById('pong-canvas') as HTMLCanvasElement;
-    if (pongCanvas) {
-        const ctx = pongCanvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
-            ctx.fillStyle = '#fff';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(t("games-pong-placeholder"), pongCanvas.width / 2, pongCanvas.height / 2);
-        }
-    }
-
    initChess();
 }
 

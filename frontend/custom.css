@@ -553,6 +553,53 @@ body.register-page {
     display: none !important;
 }
 
+.pong-canvas-stack {
+    width: 600px;
+    max-width: 100%;
+}
+
+.pong-canvas-stack:not(.pong-playing) #pong-canvas {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.pong-menu-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 400px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+    font-family: system-ui, sans-serif;
+    z-index: 10;
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+}
+
+.pong-menu-overlay__field {
+    display: block;
+    width: min(280px, 100%);
+    text-align: left;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.pong-menu-overlay__field--inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
 @media (max-width: 768px) {
     body.bg-app {
         overflow: auto;
