@@ -138,6 +138,8 @@ export const heTranslations: Record<string, string> = {
   "chat-load": "טען שיחה",
   "chat-input": "כתוב הודעה...",
   "chat-no-conversations": "אין שיחות פעילות",
+  "chat-no-messages-yet": "אין הודעות עדיין",
+  "chat-no-friends-for-chat": "הוסף חברים כדי לשוחח איתם כאן.",
   "send": "שלח",
   "games": "משחקים",
   "game-choice": "בחר משחק",
