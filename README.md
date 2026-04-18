@@ -189,6 +189,8 @@ Artificial intelligence tools were used in this project to:
 * correct certain typographical errors
 * provide educational support to help validate the understanding of specific concepts
 
+
+
 ---
 
 # French below
