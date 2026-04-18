@@ -1,3 +1,200 @@
+# Transcendence
+
+A multiplayer web application that allows users to play Pong and Chess in real time, with advanced social features.
+
+---
+
+## Content table
+
+* [Description](#description)
+* [Features](#features)
+* [Tech Stack](#tech-stack)
+* [Architecture](#architecture)
+* [Installation](#installation)
+* [Authors](#authors)
+* [Team Organization](#team-organization)
+* [Documentation](#documentation)
+* [AI Usage](#ai-usage)
+
+---
+
+## Description
+
+This project is a web application that provides an online gaming platform featuring Pong and Chess, with real-time functionality and a social component.
+
+---
+
+## Features
+
+* Authentication via 42 API (OAuth)
+* Real-time Pong
+* Real-time Chess
+* Spectator mode
+* Match history
+* Online chat
+* Experience system
+* Profile customization
+* Two-Factor Authentication (2FA)
+
+---
+
+## Tech Stack
+
+### Frontend
+
+* TypeScript
+* Bootstrap
+* CSS
+
+### Backend
+
+* TypeScript
+
+### Database
+
+* PostgreSQL
+
+### Infrastructure
+
+* Docker
+* Nginx
+* ModSecurity
+* HashiCorp Vault
+
+---
+
+## Architecture
+
+The project is divided into two main parts:
+
+### Frontend
+
+* User interface and user experience
+* Pong game implementation
+* Overall application design
+* Internationalization management
+
+### Backend
+
+* Chess game logic
+* Security layer (ModSecurity)
+* Secret management (HashiCorp Vault)
+* Reverse proxy (Nginx)
+* Service orchestration (Docker Compose)
+
+---
+
+## Installation
+
+### Prerequisites
+
+* Docker
+* Make
+
+### Setup
+
+```
+git clone <repository_url>
+cd transcendance
+make
+```
+
+### Access
+
+Once the project is running, the application is available at:
+
+```
+https://localhost:8080
+```
+
+---
+
+## Authors
+
+* ade-rese
+* gpichon
+* lde-merc
+* safuente
+
+---
+
+## Team Organization
+
+All team members contributed to the development of the application.
+Additionally, the following roles were assigned:
+
+* ade-rese: Scrum Master + Developer
+* gpichon: Product Owner + Developer
+* lde-merc: Tech Lead + Developer
+* safuente: Developer
+
+---
+
+## Documentation
+
+https://blog.getbootstrap.com/2024/02/20/bootstrap-5-3-3/
+
+https://getbootstrap.com/docs/5.3/getting-started/introduction/
+
+https://www.typescriptlang.org/docs/
+
+https://expressjs.com/
+
+https://nodejs.org/docs/latest/api/
+
+https://developer.mozilla.org/fr/docs/Web/HTML/Reference/Elements/script/type/importmap
+
+https://www.typescriptlang.org/docs/handbook/2/typeof-types.html
+
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html
+
+https://www.chess.com/learn-how-to-play-chess
+
+https://www.cs.toronto.edu/~guerzhoy/niftypong/
+
+https://threejs.org/manual/
+
+https://developer.mozilla.org/en-US/docs/Games/Anatomy
+
+https://natureofcode.com/vectors/
+
+https://mathworld.wolfram.com/Reflection.html
+
+https://github.com/owasp-modsecurity/ModSecurity
+
+https://github.com/owasp-modsecurity/ModSecurity/wiki
+
+https://coreruleset.org/docs/
+
+https://hub.docker.com/r/owasp/modsecurity-crs
+
+https://owasp.org/www-project-top-ten/
+
+https://developer.hashicorp.com/vault/docs
+
+https://developer.hashicorp.com/vault/tutorials
+
+https://github.com/hashicorp/vault
+
+https://fr.wikipedia.org/wiki/Internationalisation_(informatique)
+
+https://www.npmjs.com/package/i18n
+
+---
+
+## AI Usage
+
+Artificial intelligence tools were used in this project to:
+
+* correct certain typographical errors
+* provide educational support to help validate the understanding of specific concepts
+
+---
+
+# French below
+
+---
+
 # Transcendance
 
 Application web multijoueur permettant de jouer à Pong et aux échecs en temps réel, avec des fonctionnalités sociales avancées.
