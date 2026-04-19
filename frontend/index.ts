@@ -29,6 +29,26 @@ function getAuthToken(): string | null {
     return localStorage.getItem("token");
 }
 
+function persistOAuthToken(): void {
+  let token = new URLSearchParams(window.location.search).get("token");
+  if (!token?.trim() && window.location.hash.length > 1) {
+    token = new URLSearchParams(window.location.hash.slice(1)).get("token");
+  }
+  if (!token?.trim()) return;
+  localStorage.setItem("token", token.trim());
+  const url = new URL(window.location.href);
+  url.searchParams.delete("token");
+  const qs = url.searchParams.toString();
+  url.search = qs ? `?${qs}` : "";
+  if (url.hash.length > 1) {
+    const hp = new URLSearchParams(url.hash.slice(1));
+    hp.delete("token");
+    const h = hp.toString();
+    url.hash = h ? `#${h}` : "";
+  }
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function escapeHtml(raw: string): string {
     return raw
         .replace(/&/g, "&amp;")
@@ -61,6 +81,8 @@ function refreshTranslations(): void {
 function setProfileLogoutButtonVisible(visible: boolean): void {
     const btn = document.getElementById("profile-logout-btn") as HTMLButtonElement | null;
     if (btn) btn.hidden = !visible;
+    const delBtn = document.getElementById("profile-delete-account-btn") as HTMLButtonElement | null;
+    if (delBtn) delBtn.hidden = !visible;
 }
 
 function setProfileFriendsSectionVisible(visible: boolean): void {
@@ -91,6 +113,49 @@ function initProfileLogout(): void {
         void initProfile();
         void initLeaderboard();
         void initFriends();
+    });
+}
+
+function initProfileDeleteAccount(): void {
+    const btn = document.getElementById("profile-delete-account-btn") as HTMLButtonElement | null;
+    if (!btn || btn.dataset.deleteAccountBound === "1") return;
+    btn.dataset.deleteAccountBound = "1";
+    btn.addEventListener("click", async () => {
+        if (!window.confirm(t("profile-delete-confirm"))) return;
+        const token = getAuthToken();
+        if (!token) {
+            alert(t("profile-delete-error"));
+            return;
+        }
+        const uid = currentProfileUserId;
+        try {
+            const res = await fetch(buildApiUrl("/users/me"), {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.status === 204) {
+                localStorage.removeItem("token");
+                if (uid !== null) {
+                    localStorage.removeItem(`profile-avatar-${uid}`);
+                    localStorage.removeItem(`chess-local-xp-${uid}`);
+                }
+                profileUsernameOverride = null;
+                currentProfileUserId = null;
+                await abandonOnlineChessIfNeeded();
+                disposePongIfAny();
+                setProfileLogoutButtonVisible(false);
+                window.location.replace(new URL("login.html", window.location.href).href);
+                return;
+            }
+            if (res.status === 401) {
+                localStorage.removeItem("token");
+                window.location.replace(new URL("login.html", window.location.href).href);
+                return;
+            }
+            alert(t("profile-delete-error"));
+        } catch {
+            alert(t("profile-delete-error"));
+        }
     });
 }
 
@@ -1394,6 +1459,7 @@ async function initLeaderboard(): Promise<void> {
 }
 
 function main(): void {
+    persistOAuthToken();
     initLanguage();
     refreshTranslations();
     window.addEventListener("chess-xp-updated", () => {
@@ -1405,6 +1471,7 @@ function main(): void {
     initProfileAvatarPicker();
     initViewSwitching();
     initProfileLogout();
+    initProfileDeleteAccount();
     initProfile();
     initFriends();
     initChat();

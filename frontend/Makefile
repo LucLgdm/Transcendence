@@ -29,6 +29,7 @@ clean:
 	@echo "Cleaning compiled files..."
 	-docker stop ts-dev-front 2>/dev/null || true
 	@rm -f *.js
+	@rm -f */*.js
 
 re: clean all
 

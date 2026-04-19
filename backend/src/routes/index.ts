@@ -1,8 +1,11 @@
 import { Router } from "express";
 import User from "../models/User";
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { col, fn } from "sequelize";
+import jwt, { type SignOptions } from "jsonwebtoken";
+import { col, fn, Op } from "sequelize";
+import Message from "../models/Message";
+import Friendship from "../models/Friendship";
+import RemindMatch from "../models/remindmatch";
 import { auth, AutRequest } from "../middleware";
 import axios from 'axios';
 import sequelize from "../config/database";
@@ -10,6 +13,7 @@ import { parseLoginBody, parseRegisterBody, isValidLookupUsername } from "../val
 
 const router = Router();
 
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "30d") as SignOptions["expiresIn"];
 async function findUserProfileBySlug(username: string) {
 	return User.findOne({
 		where: sequelize.where(fn("LOWER", col("username")), username.toLowerCase()),
@@ -47,8 +51,13 @@ router.post("/register", async (req, res) => {
         }
         const { username, email, password } = parsed;
         const hashedPassword = await bcrypt.hash(password, 10);
-        await User.create({ username, email, password: hashedPassword });
-        res.status(201).json({ message: "Utilisateur créé" });
+        const user = await User.create({ username, email, password: hashedPassword });
+        const token = jwt.sign(
+            { id: user.id, username: user.username },
+            process.env.JWT_SECRET || "secret",
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+        res.status(201).json({ token });
     } catch (err) {
         res.status(400).json({ error: "Utilisateur déjà existant ou données invalides" });
     }
@@ -72,12 +81,50 @@ router.post("/login", async (req, res) => {
 		const token = jwt.sign(
 			{ id: user.id, username: user.username },
 			process.env.JWT_SECRET || "secret",
-			{ expiresIn: "24h" }
+			{ expiresIn: JWT_EXPIRES_IN }
 		);
 
 		res.json({ token });
 	} catch (err) {
 		res.status(500).json({ error: "Erreur serveur" });
+	}
+});
+
+router.delete("/me", auth, async (req: AutRequest, res) => {
+	if (!req.user) {
+		return res.status(401).json({ error: "Non authentifié" });
+	}
+	const userId = req.user.id;
+	try {
+		await sequelize.transaction(async (transaction) => {
+			await Message.destroy({
+				where: {
+					[Op.or]: [{ senderId: userId }, { receiverId: userId }],
+				},
+				transaction,
+			});
+			await Friendship.destroy({
+				where: {
+					[Op.or]: [{ userId: userId }, { friendId: userId }],
+				},
+				transaction,
+			});
+			await RemindMatch.destroy({
+				where: {
+					[Op.or]: [
+						{ player1ID: userId },
+						{ player2ID: userId },
+						{ winnerID: userId },
+					],
+				},
+				transaction,
+			});
+			await User.destroy({ where: { id: userId }, transaction });
+		});
+		res.status(204).send();
+	} catch (err) {
+		console.error("DELETE /users/me:", err);
+		res.status(500).json({ error: "delete-account-failed" });
 	}
 });
 
@@ -139,7 +186,7 @@ router.get("/auth/42/callback", async (req, res) => {
 		const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
 
 		if (!code) {
-			return res.redirect(`${frontendBaseUrl}/?error=no_code`);
+			return res.redirect(`${frontendBaseUrl}/login.html?error=no_code`);
 		}
 
 		// 1. Échange le code contre un token d'accès
@@ -194,15 +241,14 @@ router.get("/auth/42/callback", async (req, res) => {
 		const jwtToken = jwt.sign(
 			{ id: user.id, username: user.username },
 			process.env.JWT_SECRET || "secret",
-			{ expiresIn: "24h" }
+			{ expiresIn: JWT_EXPIRES_IN }
 		);
 
-		// 5. Redirige vers le frontend avec le token
-		res.redirect(`${frontendBaseUrl}/index.html?token=${jwtToken}`);
+		res.redirect(302, `${frontendBaseUrl}/login.html#token=${encodeURIComponent(jwtToken)}`);
 	} catch (err) {
 		console.error("OAuth 42 error:", err);
 		const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
-		res.redirect(`${frontendBaseUrl}/?error=auth_failed`);
+		res.redirect(`${frontendBaseUrl}/login.html?error=auth_failed`);
 	}
 });
 

@@ -36,6 +36,10 @@ if (registerForm && newUserName && newEmail && newPassword) {
 			});
 
 			if (response.ok) {
+				const data = (await response.json()) as { token?: string };
+				if (typeof data.token === "string" && data.token.length > 0) {
+					localStorage.setItem("token", data.token);
+				}
 				alert(t("register-success"));
 				window.location.replace("./index.html");
 				return;

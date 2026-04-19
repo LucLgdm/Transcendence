@@ -8,11 +8,15 @@ const User_1 = __importDefault(require("../models/User"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const sequelize_1 = require("sequelize");
+const Message_1 = __importDefault(require("../models/Message"));
+const Friendship_1 = __importDefault(require("../models/Friendship"));
+const remindmatch_1 = __importDefault(require("../models/remindmatch"));
 const middleware_1 = require("../middleware");
 const axios_1 = __importDefault(require("axios"));
 const database_1 = __importDefault(require("../config/database"));
 const userAuthInput_1 = require("../validation/userAuthInput");
 const router = (0, express_1.Router)();
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "30d";
 async function findUserProfileBySlug(username) {
     return User_1.default.findOne({
         where: database_1.default.where((0, sequelize_1.fn)("LOWER", (0, sequelize_1.col)("username")), username.toLowerCase()),
@@ -47,8 +51,9 @@ router.post("/register", async (req, res) => {
         }
         const { username, email, password } = parsed;
         const hashedPassword = await bcrypt_1.default.hash(password, 10);
-        await User_1.default.create({ username, email, password: hashedPassword });
-        res.status(201).json({ message: "Utilisateur créé" });
+        const user = await User_1.default.create({ username, email, password: hashedPassword });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "secret", { expiresIn: JWT_EXPIRES_IN });
+        res.status(201).json({ token });
     }
     catch (err) {
         res.status(400).json({ error: "Utilisateur déjà existant ou données invalides" });
@@ -67,11 +72,49 @@ router.post("/login", async (req, res) => {
         const validPassword = await bcrypt_1.default.compare(password, user.password);
         if (!validPassword)
             return res.status(401).json({ error: "Identifiants incorrects" });
-        const token = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "secret", { expiresIn: "24h" });
+        const token = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "secret", { expiresIn: JWT_EXPIRES_IN });
         res.json({ token });
     }
     catch (err) {
         res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+router.delete("/me", middleware_1.auth, async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ error: "Non authentifié" });
+    }
+    const userId = req.user.id;
+    try {
+        await database_1.default.transaction(async (transaction) => {
+            await Message_1.default.destroy({
+                where: {
+                    [sequelize_1.Op.or]: [{ senderId: userId }, { receiverId: userId }],
+                },
+                transaction,
+            });
+            await Friendship_1.default.destroy({
+                where: {
+                    [sequelize_1.Op.or]: [{ userId: userId }, { friendId: userId }],
+                },
+                transaction,
+            });
+            await remindmatch_1.default.destroy({
+                where: {
+                    [sequelize_1.Op.or]: [
+                        { player1ID: userId },
+                        { player2ID: userId },
+                        { winnerID: userId },
+                    ],
+                },
+                transaction,
+            });
+            await User_1.default.destroy({ where: { id: userId }, transaction });
+        });
+        res.status(204).send();
+    }
+    catch (err) {
+        console.error("DELETE /users/me:", err);
+        res.status(500).json({ error: "delete-account-failed" });
     }
 });
 router.get("/me", middleware_1.auth, async (req, res) => {
@@ -126,7 +169,7 @@ router.get("/auth/42/callback", async (req, res) => {
         const { code } = req.query;
         const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
         if (!code) {
-            return res.redirect(`${frontendBaseUrl}/?error=no_code`);
+            return res.redirect(`${frontendBaseUrl}/login.html?error=no_code`);
         }
         // 1. Échange le code contre un token d'accès
         const tokenResponse = await axios_1.default.post("https://api.intra.42.fr/oauth/token", {
@@ -165,15 +208,13 @@ router.get("/auth/42/callback", async (req, res) => {
                 profile_picture: profilePicture,
             });
         }
-        // 4. Génère un JWT pour la session
-        const jwtToken = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "secret", { expiresIn: "24h" });
-        // 5. Redirige vers le frontend avec le token
-        res.redirect(`${frontendBaseUrl}/index.html?token=${jwtToken}`);
+        const jwtToken = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "secret", { expiresIn: JWT_EXPIRES_IN });
+        res.redirect(302, `${frontendBaseUrl}/login.html#token=${encodeURIComponent(jwtToken)}`);
     }
     catch (err) {
         console.error("OAuth 42 error:", err);
         const frontendBaseUrl = getFrontendBaseUrl(req.hostname);
-        res.redirect(`${frontendBaseUrl}/?error=auth_failed`);
+        res.redirect(`${frontendBaseUrl}/login.html?error=auth_failed`);
     }
 });
 exports.default = router;
